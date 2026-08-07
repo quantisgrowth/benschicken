@@ -128,8 +128,8 @@ function ImagesTab() {
   const [busy, setBusy] = useState<ImageKey | null>(null);
 
   async function upload(key: ImageKey, file: File) {
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("A imagem deve ter no máximo 5 MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 10 MB.");
       return;
     }
     setBusy(key);
@@ -171,7 +171,7 @@ function ImagesTab() {
           <div key={field.key} className="rounded-3xl border border-border bg-card p-5">
             <p className="text-sm font-bold">{field.label}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Tamanho recomendado: {field.size} · máx. 5 MB
+              Tamanho recomendado: {field.size} · máx. 10 MB
             </p>
             <div className="mt-3 aspect-video overflow-hidden rounded-2xl bg-secondary">
               {url ? (

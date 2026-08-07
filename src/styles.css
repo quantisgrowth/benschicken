@@ -74,31 +74,31 @@
 :root {
   --radius: 1rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.22 0.01 60);
+  --foreground: oklch(0.2103 0.0059 286);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.01 60);
+  --card-foreground: oklch(0.2103 0.0059 286);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.01 60);
-  --primary: oklch(0.55 0.222 27.5);
-  --primary-foreground: oklch(0.99 0.005 90);
-  --secondary: oklch(0.96 0.02 80);
-  --secondary-foreground: oklch(0.28 0.02 60);
-  --muted: oklch(0.97 0.005 80);
-  --muted-foreground: oklch(0.52 0.015 60);
-  --accent: oklch(0.8 0.145 78);
-  --accent-foreground: oklch(0.24 0.03 60);
+  --popover-foreground: oklch(0.2103 0.0059 286);
+  --primary: oklch(0.7016 0.2005 42.6);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.958 0.0195 55);
+  --secondary-foreground: oklch(0.7016 0.2005 42.6);
+  --muted: oklch(0.9702 0.0035 286);
+  --muted-foreground: oklch(0.4461 0.0263 256.8);
+  --accent: oklch(0.958 0.0195 55);
+  --accent-foreground: oklch(0.7016 0.2005 42.6);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.91 0.01 70);
-  --input: oklch(0.91 0.01 70);
-  --ring: oklch(0.55 0.222 27.5);
-  --brand: oklch(0.55 0.222 27.5);
-  --brand-foreground: oklch(0.99 0.005 90);
-  --brand-dark: oklch(0.42 0.17 27.5);
-  --gold: oklch(0.8 0.145 78);
-  --gold-foreground: oklch(0.24 0.03 60);
-  --ink: oklch(0.19 0.008 60);
-  --ink-foreground: oklch(0.97 0.005 90);
+  --border: oklch(0.9197 0.004 286.3);
+  --input: oklch(0.9197 0.004 286.3);
+  --ring: oklch(0.7016 0.2005 42.6);
+  --brand: oklch(0.7016 0.2005 42.6);
+  --brand-foreground: oklch(1 0 0);
+  --brand-dark: oklch(0.633 0.181 43);
+  --gold: oklch(0.958 0.0195 55);
+  --gold-foreground: oklch(0.7016 0.2005 42.6);
+  --ink: oklch(0.2103 0.0059 286);
+  --ink-foreground: oklch(1 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -164,6 +164,14 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-foreground);
   }
 }
 

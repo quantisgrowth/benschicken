@@ -214,13 +214,23 @@ export function LeadForm({
                 )}
               </fieldset>
 
+              {errors['form'] && (
+                <p className="text-center text-sm text-destructive">{errors['form']}</p>
+              )}
+
               <button
                 type="submit"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-4 text-sm font-black uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-all hover:scale-[1.02] hover:bg-brand-dark sm:text-base"
+                disabled={sending}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-4 text-sm font-black uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-all hover:scale-[1.02] hover:bg-brand-dark disabled:opacity-60 sm:text-base"
               >
-                <Download className="h-5 w-5 shrink-0" />
+                {sending ? (
+                  <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+                ) : (
+                  <Download className="h-5 w-5 shrink-0" />
+                )}
                 Baixar apresentação e comparativo de modelos
               </button>
+
 
               <p className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
                 <ShieldCheck className="h-4 w-4 shrink-0 text-brand" />

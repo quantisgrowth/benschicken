@@ -1,6 +1,10 @@
-import { CheckCircle2, Download, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Download, Loader2, ShieldCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { submitLead } from "@/lib/content.functions";
+import type { SiteContent } from "@/lib/site-content";
 import type { Interest } from "./types";
+
 
 const UFS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",

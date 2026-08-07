@@ -170,6 +170,9 @@ function ImagesTab() {
         return (
           <div key={field.key} className="rounded-3xl border border-border bg-card p-5">
             <p className="text-sm font-bold">{field.label}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Tamanho recomendado: {field.size} · máx. 5 MB
+            </p>
             <div className="mt-3 aspect-video overflow-hidden rounded-2xl bg-secondary">
               {url ? (
                 <img src={url} alt={field.label} className="h-full w-full object-cover" />

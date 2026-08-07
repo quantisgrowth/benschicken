@@ -99,9 +99,21 @@ export type TextKey = (typeof TEXT_FIELDS)[number]["key"];
 export type SiteTexts = Record<TextKey, string>;
 
 export const IMAGE_FIELDS = [
-  { key: "heroImage", label: "Imagem do topo (hero)" },
-  { key: "kitchenImage", label: "Imagem da cozinha (Como funciona)" },
-  { key: "comboImage", label: "Imagem do combo (Como funciona)" },
+  {
+    key: "heroImage",
+    label: "Imagem do topo (hero)",
+    size: "1200 × 1200 px (quadrada, 1:1)",
+  },
+  {
+    key: "kitchenImage",
+    label: "Imagem da cozinha (Como funciona)",
+    size: "1200 × 800 px (horizontal, 3:2)",
+  },
+  {
+    key: "comboImage",
+    label: "Imagem do combo (Como funciona)",
+    size: "1200 × 800 px (horizontal, 3:2)",
+  },
 ] as const;
 
 export type ImageKey = (typeof IMAGE_FIELDS)[number]["key"];

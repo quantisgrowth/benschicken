@@ -40,12 +40,12 @@ export function LeadForm({
 
   function validate() {
     const e: Record<string, string> = {};
-    if (name.trim().length < 3) e.name = "Informe seu nome completo.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) e.email = "Informe um e-mail válido.";
-    if (phone.replace(/\D/g, "").length < 10) e.phone = "Informe um WhatsApp válido com DDD.";
-    if (city.trim().length < 2) e.city = "Informe sua cidade.";
-    if (!uf) e.uf = "Selecione o estado.";
-    if (!interest) e.interest = "Selecione o seu interesse.";
+    if (name.trim().length < 3) e['name'] = "Informe seu nome completo.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) e['email'] = "Informe um e-mail válido.";
+    if (phone.replace(/\D/g, "").length < 10) e['phone'] = "Informe um WhatsApp válido com DDD.";
+    if (city.trim().length < 2) e['city'] = "Informe sua cidade.";
+    if (!uf) e['uf'] = "Selecione o estado.";
+    if (!interest) e['interest'] = "Selecione o seu interesse.";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -90,7 +90,7 @@ export function LeadForm({
                   placeholder="Seu nome completo"
                   className={inputClass}
                 />
-                {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name}</p>}
+                {errors['name'] && <p className="mt-1 text-xs text-destructive">{errors['name']}</p>}
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
@@ -106,7 +106,7 @@ export function LeadForm({
                     placeholder="voce@email.com"
                     className={inputClass}
                   />
-                  {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
+                  {errors['email'] && <p className="mt-1 text-xs text-destructive">{errors['email']}</p>}
                 </div>
                 <div>
                   <label htmlFor="tel" className="mb-2 block text-sm font-bold">
@@ -120,7 +120,7 @@ export function LeadForm({
                     placeholder="(11) 99999-9999"
                     className={inputClass}
                   />
-                  {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone}</p>}
+                  {errors['phone'] && <p className="mt-1 text-xs text-destructive">{errors['phone']}</p>}
                 </div>
               </div>
 
@@ -136,7 +136,7 @@ export function LeadForm({
                     placeholder="Sua cidade"
                     className={inputClass}
                   />
-                  {errors.city && <p className="mt-1 text-xs text-destructive">{errors.city}</p>}
+                  {errors['city'] && <p className="mt-1 text-xs text-destructive">{errors['city']}</p>}
                 </div>
                 <div>
                   <label htmlFor="uf" className="mb-2 block text-sm font-bold">
@@ -155,7 +155,7 @@ export function LeadForm({
                       </option>
                     ))}
                   </select>
-                  {errors.uf && <p className="mt-1 text-xs text-destructive">{errors.uf}</p>}
+                  {errors['uf'] && <p className="mt-1 text-xs text-destructive">{errors['uf']}</p>}
                 </div>
               </div>
 
@@ -182,8 +182,8 @@ export function LeadForm({
                     </label>
                   ))}
                 </div>
-                {errors.interest && (
-                  <p className="mt-1 text-xs text-destructive">{errors.interest}</p>
+                {errors['interest'] && (
+                  <p className="mt-1 text-xs text-destructive">{errors['interest']}</p>
                 )}
               </fieldset>
 

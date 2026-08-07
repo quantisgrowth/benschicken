@@ -1,5 +1,6 @@
 import darkKitchen from "@/assets/dark-kitchen.jpg";
 import burgerCombo from "@/assets/burger-combo.jpg";
+import type { SiteContent } from "@/lib/site-content";
 
 const steps = [
   {
@@ -20,7 +21,7 @@ const steps = [
   },
 ];
 
-export function HowItWorks() {
+export function HowItWorks({ content }: { content: SiteContent }) {
   return (
     <section id="como-funciona" className="bg-background py-20 sm:py-24">
       <div className="mx-auto max-w-6xl px-4">
@@ -45,20 +46,20 @@ export function HowItWorks() {
 
           <div className="grid gap-5">
             <img
-              src={darkKitchen}
+              src={content.images.kitchenImage ?? darkKitchen}
               alt="Cozinha dark kitchen montando pedidos em embalagens vermelhas para delivery"
               width={1200}
               height={800}
               loading="lazy"
-              className="rounded-[2rem] object-cover shadow-xl"
+              className="aspect-[3/2] w-full rounded-[2rem] object-cover shadow-xl"
             />
             <img
-              src={burgerCombo}
+              src={content.images.comboImage ?? burgerCombo}
               alt="Hambúrguer artesanal e sanduíche de frango crocante com embalagens da marca"
               width={1200}
               height={800}
               loading="lazy"
-              className="rounded-[2rem] object-cover shadow-xl"
+              className="aspect-[3/2] w-full rounded-[2rem] object-cover shadow-xl"
             />
           </div>
         </div>

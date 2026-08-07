@@ -10,7 +10,7 @@ export function SiteFooter() {
               <Drumstick className="h-5 w-5" />
             </span>
             <span className="truncate text-lg font-extrabold">
-              Ben&apos;s <span className="text-gold">Chicken</span>
+              Ben&apos;s <span className="text-brand">Chicken</span>
             </span>
           </div>
           <p className="mt-4 max-w-xs text-sm opacity-75">
@@ -20,35 +20,35 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-gold">Contato</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-brand">Contato</h3>
           <ul className="mt-4 space-y-3 text-sm opacity-85">
             <li className="flex items-center gap-2">
-              <Phone className="h-4 w-4 shrink-0 text-gold" /> WhatsApp comercial
+              <Phone className="h-4 w-4 shrink-0 text-brand" /> WhatsApp comercial
             </li>
             <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4 shrink-0 text-gold" /> expansao@benschicken.com.br
+              <Mail className="h-4 w-4 shrink-0 text-brand" /> expansao@benschicken.com.br
             </li>
             <li className="flex items-center gap-2">
-              <Instagram className="h-4 w-4 shrink-0 text-gold" /> @benschicken
+              <Instagram className="h-4 w-4 shrink-0 text-brand" /> @benschicken
             </li>
           </ul>
         </div>
 
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-gold">Expansão</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-brand">Expansão</h3>
           <ul className="mt-4 space-y-3 text-sm opacity-85">
             <li>
-              <a href="#modelos" className="hover:text-gold">
+              <a href="#modelos" className="hover:text-brand">
                 Modelos de negócio
               </a>
             </li>
             <li>
-              <a href="#numeros" className="hover:text-gold">
+              <a href="#numeros" className="hover:text-brand">
                 Números da operação
               </a>
             </li>
             <li>
-              <a href="#form" className="hover:text-gold">
+              <a href="#form" className="hover:text-brand">
                 Receber apresentação
               </a>
             </li>

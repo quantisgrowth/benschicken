@@ -34,7 +34,7 @@ export function SiteHeader() {
           ))}
           <a
             href="#form"
-            className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-brand-foreground shadow-lg shadow-brand/25 transition-transform hover:scale-105"
+            className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-brand-foreground shadow-lg shadow-brand/25 transition-all hover:bg-brand-dark hover:scale-105"
           >
             Quero Saber Mais
           </a>
@@ -66,7 +66,7 @@ export function SiteHeader() {
             <a
               href="#form"
               onClick={() => setOpen(false)}
-              className="rounded-full bg-brand px-5 py-3 text-center text-sm font-bold text-brand-foreground"
+              className="rounded-full bg-brand px-5 py-3 text-center text-sm font-bold text-brand-foreground hover:bg-brand-dark"
             >
               Quero Saber Mais
             </a>

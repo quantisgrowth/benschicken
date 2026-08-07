@@ -12,7 +12,7 @@ export function Metrics() {
     <section id="numeros" className="bg-ink py-20 text-ink-foreground sm:py-24">
       <div className="mx-auto max-w-6xl px-4">
         <h2 className="text-center text-3xl font-black tracking-tight sm:text-4xl">
-          Números que fazem o <span className="text-gold">negócio girar</span>
+          Números que fazem o <span className="text-brand">negócio girar</span>
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-center text-sm opacity-75 sm:text-base">
           Indicadores médios das operações Ben&apos;s no delivery.
@@ -22,12 +22,12 @@ export function Metrics() {
           {stats.map((s) => (
             <div
               key={s.value}
-              className="rounded-[1.75rem] border border-gold/25 bg-ink-foreground/5 p-6 text-center transition-transform hover:-translate-y-1"
+              className="rounded-[1.75rem] border border-brand/25 bg-ink-foreground/5 p-6 text-center transition-transform hover:-translate-y-1"
             >
-              <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gold text-gold-foreground">
+              <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-brand text-brand-foreground">
                 <s.icon className="h-6 w-6" />
               </span>
-              <p className="mt-4 text-2xl font-black text-gold sm:text-3xl">{s.value}</p>
+              <p className="mt-4 text-2xl font-black text-brand sm:text-3xl">{s.value}</p>
               <p className="mt-2 text-sm opacity-80">{s.label}</p>
             </div>
           ))}

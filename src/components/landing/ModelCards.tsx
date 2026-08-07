@@ -52,20 +52,20 @@ export function ModelCards({ onSelect }: { onSelect: (interest: Interest) => voi
               <div
                 key={m.id}
                 className={`group flex flex-col rounded-[2rem] border-2 bg-card p-8 shadow-lg transition-all hover:-translate-y-1 hover:shadow-2xl ${
-                  isGold ? "border-gold/60" : "border-brand/60"
+                  isGold ? "border-border" : "border-brand/60"
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span
                     className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${
-                      isGold ? "bg-gold text-gold-foreground" : "bg-brand text-brand-foreground"
+                      isGold ? "bg-secondary text-brand" : "bg-brand text-brand-foreground"
                     }`}
                   >
                     <Icon className="h-6 w-6" />
                   </span>
                   <span
                     className={`truncate rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
-                      isGold ? "bg-gold/20 text-accent-foreground" : "bg-brand/10 text-brand"
+                      isGold ? "bg-secondary text-brand" : "bg-secondary text-brand"
                     }`}
                   >
                     {m.tag}
@@ -81,7 +81,7 @@ export function ModelCards({ onSelect }: { onSelect: (interest: Interest) => voi
                   {m.points.map((p) => (
                     <li key={p} className="flex items-start gap-3 text-sm font-medium sm:text-base">
                       <Check
-                        className={`mt-0.5 h-5 w-5 shrink-0 ${isGold ? "text-gold" : "text-brand"}`}
+                        className={`mt-0.5 h-5 w-5 shrink-0 text-brand`}
                       />
                       <span>{p}</span>
                     </li>
@@ -93,8 +93,8 @@ export function ModelCards({ onSelect }: { onSelect: (interest: Interest) => voi
                   onClick={() => onSelect(m.id)}
                   className={`mt-8 inline-flex items-center justify-center rounded-full px-6 py-4 text-sm font-bold uppercase tracking-wide transition-transform hover:scale-[1.03] sm:text-base ${
                     isGold
-                      ? "bg-gold text-gold-foreground shadow-lg shadow-gold/30"
-                      : "bg-brand text-brand-foreground shadow-lg shadow-brand/30"
+                      ? "border-2 border-brand bg-background text-brand hover:bg-secondary"
+                      : "bg-brand text-brand-foreground shadow-lg shadow-brand/30 hover:bg-brand-dark"
                   }`}
                 >
                   {m.cta}

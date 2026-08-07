@@ -4,12 +4,12 @@ import heroChicken from "@/assets/hero-chicken.jpg";
 export function Hero() {
   return (
     <section id="topo" className="relative overflow-hidden bg-background pt-28 pb-16 sm:pt-32 sm:pb-24">
-      <div className="pointer-events-none absolute -right-32 -top-24 h-96 w-96 rounded-full bg-gold/20 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 -top-24 h-96 w-96 rounded-full bg-brand/10 blur-3xl" />
       <div className="pointer-events-none absolute -left-40 top-40 h-96 w-96 rounded-full bg-brand/10 blur-3xl" />
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 lg:grid-cols-2">
         <div>
-          <span className="inline-flex items-center rounded-full border border-gold/50 bg-gold/15 px-4 py-2 text-xs font-bold text-accent-foreground sm:text-sm">
+          <span className="inline-flex items-center rounded-full border border-brand/20 bg-secondary px-4 py-2 text-xs font-bold text-brand sm:text-sm">
             🚀 Franquia Completa ou Licenciamento de Cozinha Existente
           </span>
 
@@ -27,7 +27,7 @@ export function Hero() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
               href="#modelos"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-7 py-4 text-sm font-bold uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-transform hover:scale-[1.03] sm:text-base"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-7 py-4 text-sm font-bold uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-all hover:bg-brand-dark hover:scale-[1.03] sm:text-base"
             >
               Conhecer Modelos de Negócio
               <ArrowRight className="h-5 w-5" />
@@ -48,7 +48,7 @@ export function Hero() {
         </div>
 
         <div className="relative">
-          <div className="absolute inset-0 -rotate-3 rounded-[2.5rem] bg-gradient-to-br from-brand to-gold opacity-90" />
+          <div className="absolute inset-0 -rotate-3 rounded-[2.5rem] bg-gradient-to-br from-brand to-brand-dark opacity-90" />
           <img
             src={heroChicken}
             alt="Balde de frango frito crocante com embalagem vermelha e dourada da Ben's Chicken"
@@ -57,7 +57,7 @@ export function Hero() {
             className="relative rounded-[2.5rem] object-cover shadow-2xl"
           />
           <div className="absolute -bottom-6 left-4 rounded-2xl bg-ink px-5 py-4 text-ink-foreground shadow-xl sm:left-8">
-            <p className="text-2xl font-black text-gold">2 marcas</p>
+            <p className="text-2xl font-black text-brand">2 marcas</p>
             <p className="text-xs font-medium opacity-80">em uma única operação</p>
           </div>
         </div>

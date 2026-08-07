@@ -92,10 +92,13 @@ export function ModelCards({
                   </span>
                 </div>
 
-                <h3 className="mt-6 text-2xl font-black tracking-tight sm:text-3xl">{m.title}</h3>
+                <h3 className="mt-6 text-2xl font-black tracking-tight sm:text-3xl">
+                  {overrides[m.id]?.title ?? m.title}
+                </h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                  {m.description}
+                  {overrides[m.id]?.description ?? m.description}
                 </p>
+
 
                 <ul className="mt-6 flex-1 space-y-3">
                   {m.points.map((p) => (

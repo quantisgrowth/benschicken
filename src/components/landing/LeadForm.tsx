@@ -28,18 +28,22 @@ const inputClass =
   "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25 sm:text-base";
 
 export function LeadForm({
+  content,
   interest,
   onInterestChange,
 }: {
+  content: SiteContent;
   interest: Interest | null;
   onInterestChange: (i: Interest) => void;
 }) {
+  const send = useServerFn(submitLead);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [uf, setUf] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
   function validate() {
@@ -54,22 +58,41 @@ export function LeadForm({
     return Object.keys(e).length === 0;
   }
 
-  function handleSubmit(ev: FormEvent) {
+  async function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
-    if (validate()) setSent(true);
+    if (!validate() || !interest) return;
+    setSending(true);
+    try {
+      await send({
+        data: {
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          city: city.trim(),
+          uf,
+          interest,
+        },
+      });
+      setSent(true);
+    } catch (err) {
+      setErrors({
+        form: err instanceof Error ? err.message : "Não foi possível enviar. Tente novamente.",
+      });
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
     <section id="form" className="bg-secondary/60 py-20 sm:py-24">
       <div className="mx-auto max-w-3xl px-4">
         <h2 className="text-center text-3xl font-black tracking-tight sm:text-4xl">
-          Dê o Primeiro Passo para Operar a <span className="text-brand">Ben&apos;s</span> na Sua
-          Região
+          {content.texts.formTitle}
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-center text-sm text-muted-foreground sm:text-base">
-          Preencha os dados abaixo para receber a apresentação comercial completa e o comparativo DRE
-          dos modelos.
+          {content.texts.formSubtitle}
         </p>
+
 
         <div className="mt-10 rounded-[2rem] border-2 border-brand/25 bg-card p-6 shadow-xl sm:p-10">
           {sent ? (

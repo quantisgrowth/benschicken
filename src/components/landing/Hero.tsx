@@ -1,7 +1,9 @@
 import { ArrowRight, Lock, PlayCircle } from "lucide-react";
 import heroChicken from "@/assets/hero-chicken.jpg";
+import type { SiteContent } from "@/lib/site-content";
 
-export function Hero() {
+export function Hero({ content }: { content: SiteContent }) {
+  const t = content.texts;
   return (
     <section id="topo" className="relative overflow-hidden bg-background pt-28 pb-16 sm:pt-32 sm:pb-24">
       <div className="pointer-events-none absolute -right-32 -top-24 h-96 w-96 rounded-full bg-brand/10 blur-3xl" />
@@ -14,14 +16,12 @@ export function Hero() {
           </span>
 
           <h1 className="mt-6 text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-            Fature até <span className="text-brand">R$ 1,2 Milhão</span> por ano com o ecossistema de
-            marcas que mais cresce no delivery
+            {t.heroTitleBefore} <span className="text-brand">{t.heroTitleHighlight}</span>{" "}
+            {t.heroTitleAfter}
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Abra sua Dark Kitchen do zero ou plugue as marcas Ben&apos;s Chicken e Ben&apos;s Burguer
-            na sua cozinha atual sem aumentar o seu custo fixo. Duas opções de negócios rentáveis,
-            simples e 100% focadas em delivery.
+            {t.heroSubtitle}
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -50,11 +50,11 @@ export function Hero() {
         <div className="relative">
           <div className="absolute inset-0 -rotate-3 rounded-[2.5rem] bg-gradient-to-br from-brand to-brand-dark opacity-90" />
           <img
-            src={heroChicken}
+            src={content.images.heroImage ?? heroChicken}
             alt="Balde de frango frito crocante com embalagem vermelha e dourada da Ben's Chicken"
             width={1200}
             height={1200}
-            className="relative rounded-[2.5rem] object-cover shadow-2xl"
+            className="relative aspect-square w-full rounded-[2.5rem] object-cover shadow-2xl"
           />
           <div className="absolute -bottom-6 left-4 rounded-2xl bg-ink px-5 py-4 text-ink-foreground shadow-xl sm:left-8">
             <p className="text-2xl font-black text-brand">2 marcas</p>

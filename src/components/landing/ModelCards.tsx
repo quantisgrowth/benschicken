@@ -1,5 +1,7 @@
 import { Check, ChefHat, Store } from "lucide-react";
+import type { SiteContent } from "@/lib/site-content";
 import type { Interest } from "./types";
+
 
 const models = [
   {
@@ -36,7 +38,24 @@ const models = [
   },
 ];
 
-export function ModelCards({ onSelect }: { onSelect: (interest: Interest) => void }) {
+export function ModelCards({
+  content,
+  onSelect,
+}: {
+  content: SiteContent;
+  onSelect: (interest: Interest) => void;
+}) {
+  const overrides: Record<string, { title: string; description: string }> = {
+    licenciamento: {
+      title: content.texts.licenseTitle,
+      description: content.texts.licenseDescription,
+    },
+    franquia: {
+      title: content.texts.franchiseTitle,
+      description: content.texts.franchiseDescription,
+    },
+  };
+
   return (
     <section id="modelos" className="bg-secondary/50 py-20 sm:py-24">
       <div className="mx-auto max-w-6xl px-4">
@@ -45,6 +64,7 @@ export function ModelCards({ onSelect }: { onSelect: (interest: Interest) => voi
         </h2>
 
         <div className="mt-12 grid gap-8 lg:grid-cols-2">
+
           {models.map((m) => {
             const isGold = m.accent === "gold";
             const Icon = m.icon;
@@ -72,10 +92,13 @@ export function ModelCards({ onSelect }: { onSelect: (interest: Interest) => voi
                   </span>
                 </div>
 
-                <h3 className="mt-6 text-2xl font-black tracking-tight sm:text-3xl">{m.title}</h3>
+                <h3 className="mt-6 text-2xl font-black tracking-tight sm:text-3xl">
+                  {overrides[m.id]?.title ?? m.title}
+                </h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                  {m.description}
+                  {overrides[m.id]?.description ?? m.description}
                 </p>
+
 
                 <ul className="mt-6 flex-1 space-y-3">
                   {m.points.map((p) => (

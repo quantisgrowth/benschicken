@@ -1,13 +1,17 @@
 import { CalendarClock, Layers, Percent, TrendingUp } from "lucide-react";
+import type { SiteContent } from "@/lib/site-content";
 
-const stats = [
-  { icon: TrendingUp, value: "R$ 1,2M", label: "Faturamento anual estimado" },
-  { icon: Percent, value: "15% a 20%", label: "Margem de lucro média" },
-  { icon: CalendarClock, value: "9 a 16 meses", label: "Payback do investimento" },
-  { icon: Layers, value: "2 Marcas em 1", label: "Ben's Chicken + Ben's Burguer na mesma operação" },
-];
+const icons = [TrendingUp, Percent, CalendarClock, Layers];
 
-export function Metrics() {
+export function Metrics({ content }: { content: SiteContent }) {
+  const t = content.texts;
+  const stats = [
+    { icon: icons[0]!, value: t.metric1Value, label: t.metric1Label },
+    { icon: icons[1]!, value: t.metric2Value, label: t.metric2Label },
+    { icon: icons[2]!, value: t.metric3Value, label: t.metric3Label },
+    { icon: icons[3]!, value: t.metric4Value, label: t.metric4Label },
+  ];
+
   return (
     <section id="numeros" className="bg-ink py-20 text-ink-foreground sm:py-24">
       <div className="mx-auto max-w-6xl px-4">
@@ -21,7 +25,7 @@ export function Metrics() {
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((s) => (
             <div
-              key={s.value}
+              key={s.label}
               className="rounded-[1.75rem] border border-brand/25 bg-ink-foreground/5 p-6 text-center transition-transform hover:-translate-y-1"
             >
               <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-brand text-brand-foreground">

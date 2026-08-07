@@ -8,12 +8,21 @@ import { HowItWorks } from "@/components/landing/HowItWorks";
 import { LeadForm } from "@/components/landing/LeadForm";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 import type { Interest } from "@/components/landing/types";
+import { getSiteContent } from "@/lib/content.functions";
+import { DEFAULT_CONTENT } from "@/lib/site-content";
 
 const title = "Ben's Chicken | Franquia e Licenciamento de Dark Kitchen";
 const description =
   "Fature até R$ 1,2 milhão por ano com as marcas Ben's Chicken e Ben's Burguer. Licencie sua cozinha atual ou abra uma franquia dark kitchen do zero.";
 
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    try {
+      return await getSiteContent();
+    } catch {
+      return DEFAULT_CONTENT;
+    }
+  },
   head: () => ({
     meta: [
       { title },
@@ -28,19 +37,21 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const content = Route.useLoaderData();
   const [interest, setInterest] = useState<Interest | null>(null);
 
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <main>
-        <Hero />
-        <ModelCards onSelect={setInterest} />
-        <Metrics />
-        <HowItWorks />
-        <LeadForm interest={interest} onInterestChange={setInterest} />
+        <Hero content={content} />
+        <ModelCards content={content} onSelect={setInterest} />
+        <Metrics content={content} />
+        <HowItWorks content={content} />
+        <LeadForm content={content} interest={interest} onInterestChange={setInterest} />
       </main>
       <SiteFooter />
     </div>
   );
 }
+

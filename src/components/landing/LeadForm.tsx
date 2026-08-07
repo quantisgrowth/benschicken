@@ -1,6 +1,10 @@
-import { CheckCircle2, Download, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Download, Loader2, ShieldCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { submitLead } from "@/lib/content.functions";
+import type { SiteContent } from "@/lib/site-content";
 import type { Interest } from "./types";
+
 
 const UFS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
@@ -24,18 +28,22 @@ const inputClass =
   "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25 sm:text-base";
 
 export function LeadForm({
+  content,
   interest,
   onInterestChange,
 }: {
+  content: SiteContent;
   interest: Interest | null;
   onInterestChange: (i: Interest) => void;
 }) {
+  const send = useServerFn(submitLead);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [uf, setUf] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
   function validate() {
@@ -50,22 +58,41 @@ export function LeadForm({
     return Object.keys(e).length === 0;
   }
 
-  function handleSubmit(ev: FormEvent) {
+  async function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
-    if (validate()) setSent(true);
+    if (!validate() || !interest) return;
+    setSending(true);
+    try {
+      await send({
+        data: {
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          city: city.trim(),
+          uf,
+          interest,
+        },
+      });
+      setSent(true);
+    } catch (err) {
+      setErrors({
+        form: err instanceof Error ? err.message : "Não foi possível enviar. Tente novamente.",
+      });
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
     <section id="form" className="bg-secondary/60 py-20 sm:py-24">
       <div className="mx-auto max-w-3xl px-4">
         <h2 className="text-center text-3xl font-black tracking-tight sm:text-4xl">
-          Dê o Primeiro Passo para Operar a <span className="text-brand">Ben&apos;s</span> na Sua
-          Região
+          {content.texts.formTitle}
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-center text-sm text-muted-foreground sm:text-base">
-          Preencha os dados abaixo para receber a apresentação comercial completa e o comparativo DRE
-          dos modelos.
+          {content.texts.formSubtitle}
         </p>
+
 
         <div className="mt-10 rounded-[2rem] border-2 border-brand/25 bg-card p-6 shadow-xl sm:p-10">
           {sent ? (
@@ -187,13 +214,23 @@ export function LeadForm({
                 )}
               </fieldset>
 
+              {errors['form'] && (
+                <p className="text-center text-sm text-destructive">{errors['form']}</p>
+              )}
+
               <button
                 type="submit"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-4 text-sm font-black uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-all hover:scale-[1.02] hover:bg-brand-dark sm:text-base"
+                disabled={sending}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-4 text-sm font-black uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-all hover:scale-[1.02] hover:bg-brand-dark disabled:opacity-60 sm:text-base"
               >
-                <Download className="h-5 w-5 shrink-0" />
+                {sending ? (
+                  <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+                ) : (
+                  <Download className="h-5 w-5 shrink-0" />
+                )}
                 Baixar apresentação e comparativo de modelos
               </button>
+
 
               <p className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
                 <ShieldCheck className="h-4 w-4 shrink-0 text-brand" />

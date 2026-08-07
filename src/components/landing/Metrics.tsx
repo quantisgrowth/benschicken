@@ -1,0 +1,38 @@
+import { CalendarClock, Layers, Percent, TrendingUp } from "lucide-react";
+
+const stats = [
+  { icon: TrendingUp, value: "R$ 1,2M", label: "Faturamento anual estimado" },
+  { icon: Percent, value: "15% a 20%", label: "Margem de lucro média" },
+  { icon: CalendarClock, value: "9 a 16 meses", label: "Payback do investimento" },
+  { icon: Layers, value: "2 Marcas em 1", label: "Ben's Chicken + Ben's Burguer na mesma operação" },
+];
+
+export function Metrics() {
+  return (
+    <section id="numeros" className="bg-ink py-20 text-ink-foreground sm:py-24">
+      <div className="mx-auto max-w-6xl px-4">
+        <h2 className="text-center text-3xl font-black tracking-tight sm:text-4xl">
+          Números que fazem o <span className="text-gold">negócio girar</span>
+        </h2>
+        <p className="mx-auto mt-4 max-w-2xl text-center text-sm opacity-75 sm:text-base">
+          Indicadores médios das operações Ben&apos;s no delivery.
+        </p>
+
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((s) => (
+            <div
+              key={s.value}
+              className="rounded-[1.75rem] border border-gold/25 bg-ink-foreground/5 p-6 text-center transition-transform hover:-translate-y-1"
+            >
+              <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gold text-gold-foreground">
+                <s.icon className="h-6 w-6" />
+              </span>
+              <p className="mt-4 text-2xl font-black text-gold sm:text-3xl">{s.value}</p>
+              <p className="mt-2 text-sm opacity-80">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -1,24 +1,46 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { SiteHeader } from "@/components/landing/SiteHeader";
+import { Hero } from "@/components/landing/Hero";
+import { ModelCards } from "@/components/landing/ModelCards";
+import { Metrics } from "@/components/landing/Metrics";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { LeadForm } from "@/components/landing/LeadForm";
+import { SiteFooter } from "@/components/landing/SiteFooter";
+import type { Interest } from "@/components/landing/types";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+const title = "Ben's Chicken | Franquia e Licenciamento de Dark Kitchen";
+const description =
+  "Fature até R$ 1,2 milhão por ano com as marcas Ben's Chicken e Ben's Burguer. Licencie sua cozinha atual ou abra uma franquia dark kitchen do zero.";
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const [interest, setInterest] = useState<Interest | null>(null);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+      <main>
+        <Hero />
+        <ModelCards onSelect={setInterest} />
+        <Metrics />
+        <HowItWorks />
+        <LeadForm interest={interest} onInterestChange={setInterest} />
+      </main>
+      <SiteFooter />
     </div>
   );
 }

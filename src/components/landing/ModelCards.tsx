@@ -1,5 +1,7 @@
 import { Check, ChefHat, Store } from "lucide-react";
+import type { SiteContent } from "@/lib/site-content";
 import type { Interest } from "./types";
+
 
 const models = [
   {

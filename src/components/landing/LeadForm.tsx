@@ -354,7 +354,7 @@ export function LeadForm({
                       ) : (
                         <Download className="h-5 w-5 shrink-0" />
                       )}
-                      Baixar apresentação e comparativo
+                      Enviar informações e Baixar Material
                     </button>
                     <button
                       type="button"

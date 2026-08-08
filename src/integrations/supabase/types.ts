@@ -19,8 +19,10 @@ export type Database = {
           city: string
           created_at: string
           email: string
+          experience: string | null
           id: string
           interest: string
+          investment: number | null
           name: string
           phone: string
           uf: string
@@ -29,8 +31,10 @@ export type Database = {
           city: string
           created_at?: string
           email: string
+          experience?: string | null
           id?: string
           interest: string
+          investment?: number | null
           name: string
           phone: string
           uf: string
@@ -39,8 +43,10 @@ export type Database = {
           city?: string
           created_at?: string
           email?: string
+          experience?: string | null
           id?: string
           interest?: string
+          investment?: number | null
           name?: string
           phone?: string
           uf?: string

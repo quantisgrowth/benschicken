@@ -343,6 +343,8 @@ function LeadsTab() {
             <th className="px-4 py-3">Contato</th>
             <th className="px-4 py-3">Local</th>
             <th className="px-4 py-3">Interesse</th>
+            <th className="px-4 py-3">Investimento</th>
+            <th className="px-4 py-3">Experiência</th>
             <th className="px-4 py-3" />
           </tr>
         </thead>
@@ -364,6 +366,22 @@ function LeadsTab() {
                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-brand">
                   {interestLabels[lead.interest] ?? lead.interest}
                 </span>
+              </td>
+              <td className="px-4 py-3">
+                {lead.investment
+                  ? lead.investment.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                      maximumFractionDigits: 0,
+                    })
+                  : "—"}
+              </td>
+              <td className="px-4 py-3">
+                {lead.experience === "sim"
+                  ? "Já atua"
+                  : lead.experience === "nao"
+                    ? "Primeira vez"
+                    : "—"}
               </td>
               <td className="px-4 py-3 text-right">
                 <button

@@ -79,6 +79,8 @@ const leadSchema = z.object({
   city: z.string().trim().min(2).max(120),
   uf: z.string().trim().length(2),
   interest: z.enum(["licenciamento", "franquia", "ambos"]),
+  investment: z.number().int().min(50000).max(500000),
+  experience: z.enum(["sim", "nao"]),
 });
 
 export const submitLead = createServerFn({ method: "POST" })

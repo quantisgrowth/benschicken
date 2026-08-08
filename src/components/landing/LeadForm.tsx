@@ -1,4 +1,4 @@
-import { CheckCircle2, Download, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Download, Loader2, ShieldCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { submitLead } from "@/lib/content.functions";
@@ -15,6 +15,17 @@ const OPTIONS: { id: Interest; label: string }[] = [
   { id: "franquia", label: "Quero abrir uma Franquia do Zero (A partir de R$ 200k)" },
   { id: "ambos", label: "Quero entender ambos os modelos para decidir" },
 ];
+
+type Experience = "sim" | "nao";
+
+const EXPERIENCE_OPTIONS: { id: Experience; label: string }[] = [
+  { id: "sim", label: "Sim, já atuo no ramo de alimentação" },
+  { id: "nao", label: "Não, seria a minha primeira vez no setor" },
+];
+
+const brl = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
 
 function maskPhone(value: string) {
   const d = value.replace(/\D/g, "").slice(0, 11);

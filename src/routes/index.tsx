@@ -42,7 +42,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader />
+      <SiteHeader content={content} />
       <main>
         <Hero content={content} />
         <ModelCards content={content} onSelect={setInterest} />
@@ -50,7 +50,7 @@ function Index() {
         <HowItWorks content={content} />
         <LeadForm content={content} interest={interest} onInterestChange={setInterest} />
       </main>
-      <SiteFooter />
+      <SiteFooter content={content} />
     </div>
   );
 }

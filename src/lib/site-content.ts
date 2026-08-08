@@ -93,12 +93,96 @@ export const TEXT_FIELDS = [
       "Preencha os dados abaixo para receber a apresentação comercial completa e o comparativo DRE dos modelos.",
     multiline: true,
   },
+  {
+    key: "footerAbout",
+    label: "Rodapé — texto sobre a marca",
+    default:
+      "Ecossistema de marcas de delivery: Ben's Chicken e Ben's Burguer, operando juntas na mesma cozinha.",
+    multiline: true,
+  },
+  {
+    key: "footerContactTitle",
+    label: "Rodapé — título da coluna de contato",
+    default: "Contato",
+    multiline: false,
+  },
+  {
+    key: "footerPhone",
+    label: "Rodapé — WhatsApp / telefone",
+    default: "WhatsApp comercial",
+    multiline: false,
+  },
+  {
+    key: "footerPhoneLink",
+    label: "Rodapé — link do WhatsApp (ex.: https://wa.me/5511999999999)",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "footerEmail",
+    label: "Rodapé — e-mail",
+    default: "expansao@benschicken.com.br",
+    multiline: false,
+  },
+  {
+    key: "footerInstagram",
+    label: "Rodapé — Instagram (@usuário)",
+    default: "@benschicken",
+    multiline: false,
+  },
+  {
+    key: "footerInstagramLink",
+    label: "Rodapé — link do Instagram",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "footerLinksTitle",
+    label: "Rodapé — título da coluna de links",
+    default: "Expansão",
+    multiline: false,
+  },
+  {
+    key: "footerLink1",
+    label: "Rodapé — link 1 (texto)",
+    default: "Modelos de negócio",
+    multiline: false,
+  },
+  {
+    key: "footerLink2",
+    label: "Rodapé — link 2 (texto)",
+    default: "Números da operação",
+    multiline: false,
+  },
+  {
+    key: "footerLink3",
+    label: "Rodapé — link 3 (texto)",
+    default: "Receber apresentação",
+    multiline: false,
+  },
+  {
+    key: "footerLegal",
+    label: "Rodapé — aviso legal / direitos",
+    default:
+      "Todos os direitos reservados. As projeções apresentadas são estimativas baseadas em operações existentes e não constituem garantia de resultado.",
+    multiline: true,
+  },
 ] as const;
 
 export type TextKey = (typeof TEXT_FIELDS)[number]["key"];
 export type SiteTexts = Record<TextKey, string>;
 
 export const IMAGE_FIELDS = [
+  {
+    key: "headerLogo",
+    label: "Logo do cabeçalho (topo do site)",
+    size: "400 × 120 px (horizontal, fundo transparente PNG)",
+  },
+  {
+    key: "footerLogo",
+    label: "Logo do rodapé",
+    size: "400 × 120 px (horizontal, fundo transparente PNG)",
+  },
   {
     key: "heroImage",
     label: "Imagem do topo (hero)",
@@ -125,11 +209,9 @@ export const DEFAULT_TEXTS = Object.fromEntries(
   TEXT_FIELDS.map((f) => [f.key, f.default]),
 ) as SiteTexts;
 
-export const DEFAULT_IMAGES: SiteImages = {
-  heroImage: null,
-  kitchenImage: null,
-  comboImage: null,
-};
+export const DEFAULT_IMAGES: SiteImages = Object.fromEntries(
+  IMAGE_FIELDS.map((f) => [f.key, null]),
+) as SiteImages;
 
 export const DEFAULT_CONTENT: SiteContent = { texts: DEFAULT_TEXTS, images: DEFAULT_IMAGES };
 

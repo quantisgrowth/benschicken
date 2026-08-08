@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
+  DEFAULT_IMAGES,
   DEFAULT_TEXTS,
   IMAGE_KEYS,
   TEXT_KEYS,
@@ -37,7 +38,7 @@ function serverPublicClient() {
 export const getSiteContent = createServerFn({ method: "GET" }).handler(
   async (): Promise<SiteContent> => {
     const texts = { ...DEFAULT_TEXTS };
-    const images: SiteImages = { heroImage: null, kitchenImage: null, comboImage: null };
+    const images: SiteImages = { ...DEFAULT_IMAGES };
 
     const supabase = await serverPublicClient();
     const { data, error } = await supabase.from("site_content").select("key, value");

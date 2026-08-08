@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
+  DEFAULT_IMAGES,
   DEFAULT_TEXTS,
   IMAGE_KEYS,
   TEXT_KEYS,

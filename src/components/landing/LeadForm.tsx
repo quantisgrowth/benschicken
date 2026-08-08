@@ -48,30 +48,50 @@ export function LeadForm({
   onInterestChange: (i: Interest) => void;
 }) {
   const send = useServerFn(submitLead);
+  const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [uf, setUf] = useState("");
+  const [investment, setInvestment] = useState(50000);
+  const [experience, setExperience] = useState<Experience | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  function validate() {
+  function validateStep1() {
     const e: Record<string, string> = {};
     if (name.trim().length < 3) e['name'] = "Informe seu nome completo.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) e['email'] = "Informe um e-mail válido.";
     if (phone.replace(/\D/g, "").length < 10) e['phone'] = "Informe um WhatsApp válido com DDD.";
     if (city.trim().length < 2) e['city'] = "Informe sua cidade.";
     if (!uf) e['uf'] = "Selecione o estado.";
-    if (!interest) e['interest'] = "Selecione o seu interesse.";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
 
+  function validateStep2() {
+    const e: Record<string, string> = {};
+    if (!interest) e['interest'] = "Selecione o seu interesse.";
+    if (!experience) e['experience'] = "Selecione uma opção.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function handleNext() {
+    if (!validateStep1()) return;
+    setErrors({});
+    setStep(2);
+  }
+
   async function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
-    if (!validate() || !interest) return;
+    if (step === 1) {
+      handleNext();
+      return;
+    }
+    if (!validateStep2() || !interest || !experience) return;
     setSending(true);
     try {
       await send({
@@ -82,6 +102,8 @@ export function LeadForm({
           city: city.trim(),
           uf,
           interest,
+          investment,
+          experience,
         },
       });
       setSent(true);
@@ -93,6 +115,7 @@ export function LeadForm({
       setSending(false);
     }
   }
+
 
   return (
     <section id="form" className="bg-secondary/60 py-20 sm:py-24">

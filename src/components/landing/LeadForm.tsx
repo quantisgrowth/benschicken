@@ -77,11 +77,19 @@ export function LeadForm({
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [uf, setUf] = useState("");
-  const [investment, setInvestment] = useState(50000);
+  const [investment, setInvestment] = useState(INVESTMENT_RANGES.default.def);
+  const [operationCity, setOperationCity] = useState("");
   const [experience, setExperience] = useState<Experience | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+
+  const range = rangeFor(interest);
+
+  function selectInterest(i: Interest) {
+    onInterestChange(i);
+    setInvestment(rangeFor(i).def);
+  }
 
   function validateStep1() {
     const e: Record<string, string> = {};
@@ -97,6 +105,7 @@ export function LeadForm({
   function validateStep2() {
     const e: Record<string, string> = {};
     if (!interest) e['interest'] = "Selecione o seu interesse.";
+    if (operationCity.trim().length < 2) e['operationCity'] = "Informe a cidade/estado de operação.";
     if (!experience) e['experience'] = "Selecione uma opção.";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -127,6 +136,7 @@ export function LeadForm({
           interest,
           investment,
           experience,
+          operationCity: operationCity.trim(),
         },
       });
       setSent(true);
@@ -138,6 +148,7 @@ export function LeadForm({
       setSending(false);
     }
   }
+
 
 
   return (

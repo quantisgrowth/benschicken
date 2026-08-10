@@ -79,15 +79,20 @@ const leadSchema = z.object({
   city: z.string().trim().min(2).max(120),
   uf: z.string().trim().length(2),
   interest: z.enum(["licenciamento", "franquia", "ambos"]),
-  investment: z.number().int().min(50000).max(500000),
+  investment: z.number().int().min(10000).max(500000),
   experience: z.enum(["sim", "nao"]),
+  operationCity: z.string().trim().min(2).max(160).optional(),
 });
 
 export const submitLead = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => leadSchema.parse(input))
   .handler(async ({ data }) => {
     const supabase = await serverPublicClient();
-    const { error } = await supabase.from("leads").insert(data);
+    const { operationCity, ...rest } = data;
+    const { error } = await supabase
+      .from("leads")
+      .insert({ ...rest, operation_city: operationCity ?? null });
     if (error) throw new Error("Não foi possível enviar seus dados. Tente novamente.");
     return { ok: true as const };
   });
+

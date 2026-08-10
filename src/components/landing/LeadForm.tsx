@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, CheckCircle2, Download, Loader2, ShieldCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { submitLead } from "@/lib/content.functions";
 import type { SiteContent } from "@/lib/site-content";
@@ -106,15 +107,23 @@ export function LeadForm({
 
   function validateStep2() {
     const e: Record<string, string> = {};
-    if (!interest) e['interest'] = "Selecione o seu interesse.";
-    if (operationCity.trim().length < 2) e['operationCity'] = "Informe a cidade/estado de operação.";
-    if (!experience) e['experience'] = "Selecione uma opção.";
+    if (!interest) e["interest"] = "Selecione o seu interesse.";
+    if (operationCity.trim().length < 2)
+      e["operationCity"] = "Informe a cidade/estado de operação.";
+    if (!experience) e["experience"] = "Selecione se já atua no setor.";
     setErrors(e);
-    return Object.keys(e).length === 0;
+    if (Object.keys(e).length > 0) {
+      toast.error("Por favor, preencha todos os campos do Passo 2 para continuar.");
+      return false;
+    }
+    return true;
   }
 
   function handleNext() {
-    if (!validateStep1()) return;
+    if (!validateStep1()) {
+      toast.error("Por favor, preencha todos os campos do Passo 1.");
+      return;
+    }
     setErrors({});
     setStep(2);
   }
@@ -126,43 +135,53 @@ export function LeadForm({
       return;
     }
     if (!validateStep2() || !interest || !experience) return;
+
     setSending(true);
+    setErrors({});
+
+    const payload = {
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      city: city.trim(),
+      uf,
+      interest,
+      investment: investmentValue,
+      experience,
+      operation_city: operationCity.trim(),
+    };
+
     try {
-      try {
+      // 1. Inserção direta no Supabase
+      const { error: insertError } = await supabase.from("leads").insert(payload);
+
+      if (insertError) {
+        console.warn("Direct insert failed, attempting serverFn:", insertError);
         await send({
           data: {
-            name: name.trim(),
-            email: email.trim(),
-            phone: phone.trim(),
-            city: city.trim(),
-            uf,
-            interest,
-            investment: investmentValue,
-            experience,
-            operationCity: operationCity.trim(),
+            name: payload.name,
+            email: payload.email,
+            phone: payload.phone,
+            city: payload.city,
+            uf: payload.uf,
+            interest: payload.interest,
+            investment: payload.investment,
+            experience: payload.experience,
+            operationCity: payload.operation_city,
           },
         });
-      } catch (serverErr) {
-        console.warn("Server submission fallback to Supabase client:", serverErr);
-        const { error: insertError } = await supabase.from("leads").insert({
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          city: city.trim(),
-          uf,
-          interest,
-          investment: investmentValue,
-          experience,
-          operation_city: operationCity.trim(),
-        });
-        if (insertError) throw insertError;
       }
+
       setSent(true);
+      toast.success("Recebemos seus dados com sucesso!");
     } catch (err) {
       console.error("Lead submission error:", err);
-      setErrors({
-        form: err instanceof Error ? err.message : "Não foi possível enviar. Tente novamente.",
-      });
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Não foi possível enviar. Tente novamente.";
+      setErrors({ form: msg });
+      toast.error(msg);
     } finally {
       setSending(false);
     }

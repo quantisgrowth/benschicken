@@ -52,7 +52,7 @@ export function SiteFooter({ content }: { content: SiteContent }) {
                 {t.footerEmail}
               </a>
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex items-center justify-center gap-2">
               <Instagram className="h-4 w-4 shrink-0 text-brand" />
               {t.footerInstagramLink ? (
                 <a

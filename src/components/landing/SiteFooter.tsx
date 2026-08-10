@@ -7,8 +7,8 @@ export function SiteFooter({ content }: { content: SiteContent }) {
 
   return (
     <footer className="bg-ink py-14 text-ink-foreground">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 md:grid-cols-3">
-        <div>
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 text-center md:grid-cols-3">
+        <div className="flex flex-col items-center">
           <div className="flex min-w-0 items-center gap-2">
             {logo ? (
               <img src={logo} alt="Ben's Chicken" className="h-12 w-auto object-contain" />

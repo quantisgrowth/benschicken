@@ -31,7 +31,7 @@ export function SiteFooter({ content }: { content: SiteContent }) {
             {t.footerContactTitle}
           </h3>
           <ul className="mt-4 space-y-3 text-sm opacity-85">
-            <li className="flex items-center gap-2">
+            <li className="flex items-center justify-center gap-2">
               <Phone className="h-4 w-4 shrink-0 text-brand" />
               {t.footerPhoneLink ? (
                 <a

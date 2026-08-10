@@ -307,7 +307,7 @@ export function LeadForm({
                             type="radio"
                             name="interesse"
                             checked={interest === o.id}
-                            onChange={() => onInterestChange(o.id)}
+                            onChange={() => selectInterest(o.id)}
                             className="mt-1 h-4 w-4 shrink-0 accent-[var(--brand)]"
                           />
                           <span>{o.label}</span>
@@ -319,29 +319,52 @@ export function LeadForm({
                     )}
                   </fieldset>
 
+                  <div>
+                    <label htmlFor="cidade-operacao" className="mb-2 block text-sm font-bold">
+                      Em qual cidade/estado você pretende operar?
+                    </label>
+                    <input
+                      id="cidade-operacao"
+                      list="cidades-operacao"
+                      value={operationCity}
+                      onChange={(e) => setOperationCity(e.target.value)}
+                      placeholder="Ex.: Curitiba - PR"
+                      className={inputClass}
+                    />
+                    <datalist id="cidades-operacao">
+                      {CITY_SUGGESTIONS.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
+                    {errors['operationCity'] && (
+                      <p className="mt-1 text-xs text-destructive">{errors['operationCity']}</p>
+                    )}
+                  </div>
+
                   <div className="rounded-2xl border-2 border-border p-4 sm:p-5">
                     <label htmlFor="investimento" className="block text-sm font-bold">
                       Qual sua pretensão de investimento?
                     </label>
                     <p className="mt-3 text-2xl font-black text-brand sm:text-3xl">
                       {brl(investment)}
-                      {investment === 500000 && "+"}
+                      {investment === range.max && "+"}
                     </p>
                     <input
                       id="investimento"
                       type="range"
-                      min={50000}
-                      max={500000}
-                      step={50000}
+                      min={range.min}
+                      max={range.max}
+                      step={range.step}
                       value={investment}
                       onChange={(e) => setInvestment(Number(e.target.value))}
                       className="mt-4 w-full accent-[var(--brand)]"
                     />
                     <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                      <span>R$ 50 mil</span>
-                      <span>R$ 500 mil</span>
+                      <span>{brl(range.min)}</span>
+                      <span>{brl(range.max)}+</span>
                     </div>
                   </div>
+
 
                   <fieldset>
                     <legend className="mb-3 text-sm font-bold">

@@ -8,6 +8,7 @@ const models = [
     id: "licenciamento" as Interest,
     icon: Store,
     tag: "Para quem JÁ TEM cozinha",
+    badge: "Para quem já tem cozinha | Baixo investimento de adequação",
     title: "Licenciamento de Marca",
     description:
       "Perfeito para restaurantes, lanchonetes e dark kitchens ativas que buscam receita incremental sem aumentar custos fixos.",
@@ -24,6 +25,7 @@ const models = [
     id: "franquia" as Interest,
     icon: ChefHat,
     tag: "Para quem quer COMEÇAR DO ZERO",
+    badge: "Investimento a partir de R$ 200 mil",
     title: "Franquia Dark Kitchen",
     description:
       "Modelo completo 'turnkey' para montar sua unidade do zero com suporte total de implantação, marketing e processos.",
@@ -37,6 +39,7 @@ const models = [
     accent: "brand" as const,
   },
 ];
+
 
 export function ModelCards({
   content,

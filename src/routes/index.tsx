@@ -46,16 +46,20 @@ function Index() {
   const [interest, setInterest] = useState<Interest | null>(null);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <SiteHeader content={content} />
       <main>
         <Hero content={content} />
-        <ModelCards content={content} onSelect={setInterest} />
         <Metrics content={content} />
+        <SocialProof />
+        <ProductShowcase />
+        <ModelCards content={content} onSelect={setInterest} />
         <HowItWorks content={content} />
+        <Faq />
         <LeadForm content={content} interest={interest} onInterestChange={setInterest} />
       </main>
       <SiteFooter content={content} />
+      <MobileCtaBar content={content} />
     </div>
   );
 }

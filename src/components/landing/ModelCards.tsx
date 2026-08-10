@@ -98,6 +98,9 @@ export function ModelCards({
                 <h3 className="mt-6 text-2xl font-black tracking-tight sm:text-3xl">
                   {overrides[m.id]?.title ?? m.title}
                 </h3>
+                <p className="mt-3 inline-block rounded-full bg-brand/10 px-4 py-2 text-xs font-black uppercase tracking-wide text-brand sm:text-sm">
+                  {m.badge}
+                </p>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
                   {overrides[m.id]?.description ?? m.description}
                 </p>

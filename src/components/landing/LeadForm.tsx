@@ -23,8 +23,31 @@ const EXPERIENCE_OPTIONS: { id: Experience; label: string }[] = [
   { id: "nao", label: "Não, seria a minha primeira vez no setor" },
 ];
 
+const INVESTMENT_RANGES: Record<
+  "licenciamento" | "franquia" | "default",
+  { min: number; max: number; step: number; def: number }
+> = {
+  licenciamento: { min: 10000, max: 100000, step: 10000, def: 20000 },
+  franquia: { min: 150000, max: 500000, step: 50000, def: 200000 },
+  default: { min: 50000, max: 500000, step: 50000, def: 200000 },
+};
+
+function rangeFor(interest: Interest | null) {
+  if (interest === "licenciamento") return INVESTMENT_RANGES.licenciamento;
+  if (interest === "franquia") return INVESTMENT_RANGES.franquia;
+  return INVESTMENT_RANGES.default;
+}
+
+const CITY_SUGGESTIONS = [
+  "São Paulo - SP","Campinas - SP","Santos - SP","Rio de Janeiro - RJ","Niterói - RJ",
+  "Belo Horizonte - MG","Uberlândia - MG","Curitiba - PR","Londrina - PR","Porto Alegre - RS",
+  "Florianópolis - SC","Joinville - SC","Salvador - BA","Recife - PE","Fortaleza - CE",
+  "Brasília - DF","Goiânia - GO","Cuiabá - MT","Campo Grande - MS","Belém - PA","Manaus - AM",
+];
+
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
 
 
 function maskPhone(value: string) {

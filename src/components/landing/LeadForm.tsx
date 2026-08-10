@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, CheckCircle2, Download, Loader2, ShieldCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { submitLead } from "@/lib/content.functions";
 import type { SiteContent } from "@/lib/site-content";
 import type { Interest } from "./types";
@@ -127,8 +128,23 @@ export function LeadForm({
     if (!validateStep2() || !interest || !experience) return;
     setSending(true);
     try {
-      await send({
-        data: {
+      try {
+        await send({
+          data: {
+            name: name.trim(),
+            email: email.trim(),
+            phone: phone.trim(),
+            city: city.trim(),
+            uf,
+            interest,
+            investment: investmentValue,
+            experience,
+            operationCity: operationCity.trim(),
+          },
+        });
+      } catch (serverErr) {
+        console.warn("Server submission fallback to Supabase client:", serverErr);
+        const { error: insertError } = await supabase.from("leads").insert({
           name: name.trim(),
           email: email.trim(),
           phone: phone.trim(),
@@ -137,11 +153,13 @@ export function LeadForm({
           interest,
           investment: investmentValue,
           experience,
-          operationCity: operationCity.trim(),
-        },
-      });
+          operation_city: operationCity.trim(),
+        });
+        if (insertError) throw insertError;
+      }
       setSent(true);
     } catch (err) {
+      console.error("Lead submission error:", err);
       setErrors({
         form: err instanceof Error ? err.message : "Não foi possível enviar. Tente novamente.",
       });

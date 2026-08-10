@@ -15,8 +15,16 @@ import {
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
 
 function serverPublicClient() {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-  const url = process.env["SUPABASE_URL"]!;
+  const key =
+    process.env["SUPABASE_PUBLISHABLE_KEY"] ||
+    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+    process.env["SUPABASE_ANON_KEY"] ||
+    "";
+  const url =
+    process.env["SUPABASE_URL"] ||
+    process.env["VITE_SUPABASE_URL"] ||
+    "";
+
   // Imported lazily so this never enters the client bundle.
   return import("@supabase/supabase-js").then(({ createClient }) =>
     createClient(url, key, {

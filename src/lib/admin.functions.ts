@@ -67,7 +67,7 @@ export const listLeads = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { data, error } = await context.supabase
       .from("leads")
-      .select("id, name, email, phone, city, uf, interest, investment, experience, created_at")
+      .select("id, name, email, phone, city, uf, interest, investment, experience, operation_city, created_at")
       .order("created_at", { ascending: false })
       .limit(1000);
     if (error) throw new Error("Não foi possível carregar os leads.");
@@ -81,6 +81,7 @@ export const listLeads = createServerFn({ method: "GET" })
       interest: string;
       investment: number | null;
       experience: string | null;
+      operation_city: string | null;
       created_at: string;
     }[];
   });

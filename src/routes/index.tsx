@@ -4,12 +4,17 @@ import { SiteHeader } from "@/components/landing/SiteHeader";
 import { Hero } from "@/components/landing/Hero";
 import { ModelCards } from "@/components/landing/ModelCards";
 import { Metrics } from "@/components/landing/Metrics";
+import { SocialProof } from "@/components/landing/SocialProof";
+import { ProductShowcase } from "@/components/landing/ProductShowcase";
 import { HowItWorks } from "@/components/landing/HowItWorks";
+import { Faq } from "@/components/landing/Faq";
 import { LeadForm } from "@/components/landing/LeadForm";
+import { MobileCtaBar } from "@/components/landing/MobileCtaBar";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 import type { Interest } from "@/components/landing/types";
 import { getSiteContent } from "@/lib/content.functions";
 import { DEFAULT_CONTENT } from "@/lib/site-content";
+
 
 const title = "Ben's Chicken | Franquia e Licenciamento de Dark Kitchen";
 const description =
@@ -41,16 +46,20 @@ function Index() {
   const [interest, setInterest] = useState<Interest | null>(null);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <SiteHeader content={content} />
       <main>
         <Hero content={content} />
-        <ModelCards content={content} onSelect={setInterest} />
         <Metrics content={content} />
+        <SocialProof />
+        <ProductShowcase />
+        <ModelCards content={content} onSelect={setInterest} />
         <HowItWorks content={content} />
+        <Faq />
         <LeadForm content={content} interest={interest} onInterestChange={setInterest} />
       </main>
       <SiteFooter content={content} />
+      <MobileCtaBar content={content} />
     </div>
   );
 }

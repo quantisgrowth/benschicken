@@ -4,6 +4,16 @@ import type { SiteContent } from "@/lib/site-content";
 
 export function Hero({ content }: { content: SiteContent }) {
   const t = content.texts;
+
+  function focusForm() {
+    const form = document.getElementById("form");
+    form?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => {
+      const input = document.getElementById("nome") as HTMLInputElement | null;
+      input?.focus({ preventScroll: true });
+    }, 600);
+  }
+
   return (
     <section id="topo" className="relative overflow-hidden bg-background pt-28 pb-16 sm:pt-32 sm:pb-24">
       <div className="pointer-events-none absolute -right-32 -top-24 h-96 w-96 rounded-full bg-brand/10 blur-3xl" />
@@ -25,13 +35,14 @@ export function Hero({ content }: { content: SiteContent }) {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              href="#modelos"
+            <button
+              type="button"
+              onClick={focusForm}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-7 py-4 text-sm font-bold uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-all hover:bg-brand-dark hover:scale-[1.03] sm:text-base"
             >
-              Conhecer Modelos de Negócio
+              Receber Apresentação Financeira
               <ArrowRight className="h-5 w-5" />
-            </a>
+            </button>
             <a
               href="#como-funciona"
               className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-ink/15 px-7 py-4 text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:border-brand hover:text-brand sm:text-base"
@@ -43,8 +54,9 @@ export function Hero({ content }: { content: SiteContent }) {
 
           <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
             <Lock className="h-4 w-4 shrink-0 text-brand" />
-            Material gratuito • Receba a apresentação financeira em menos de 2 minutos
+            Receba a apresentação financeira em menos de 2 minutos
           </p>
+
         </div>
 
         <div className="relative">

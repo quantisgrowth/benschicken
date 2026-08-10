@@ -24,6 +24,7 @@ export type Database = {
           interest: string
           investment: number | null
           name: string
+          operation_city: string | null
           phone: string
           uf: string
         }
@@ -36,6 +37,7 @@ export type Database = {
           interest: string
           investment?: number | null
           name: string
+          operation_city?: string | null
           phone: string
           uf: string
         }
@@ -48,6 +50,7 @@ export type Database = {
           interest?: string
           investment?: number | null
           name?: string
+          operation_city?: string | null
           phone?: string
           uf?: string
         }

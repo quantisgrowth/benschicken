@@ -8,6 +8,7 @@ const models = [
     id: "licenciamento" as Interest,
     icon: Store,
     tag: "Para quem JÁ TEM cozinha",
+    badge: "Para quem já tem cozinha | Baixo investimento de adequação",
     title: "Licenciamento de Marca",
     description:
       "Perfeito para restaurantes, lanchonetes e dark kitchens ativas que buscam receita incremental sem aumentar custos fixos.",
@@ -24,6 +25,7 @@ const models = [
     id: "franquia" as Interest,
     icon: ChefHat,
     tag: "Para quem quer COMEÇAR DO ZERO",
+    badge: "Investimento a partir de R$ 200 mil",
     title: "Franquia Dark Kitchen",
     description:
       "Modelo completo 'turnkey' para montar sua unidade do zero com suporte total de implantação, marketing e processos.",
@@ -37,6 +39,7 @@ const models = [
     accent: "brand" as const,
   },
 ];
+
 
 export function ModelCards({
   content,
@@ -95,6 +98,9 @@ export function ModelCards({
                 <h3 className="mt-6 text-2xl font-black tracking-tight sm:text-3xl">
                   {overrides[m.id]?.title ?? m.title}
                 </h3>
+                <p className="mt-3 inline-block rounded-full bg-brand/10 px-4 py-2 text-xs font-black uppercase tracking-wide text-brand sm:text-sm">
+                  {m.badge}
+                </p>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
                   {overrides[m.id]?.description ?? m.description}
                 </p>

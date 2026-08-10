@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import galleryTeam from "@/assets/gallery-team.jpg";
 import galleryDelivery from "@/assets/gallery-delivery.jpg";
 import darkKitchen from "@/assets/dark-kitchen.jpg";
-import productBucket from "@/assets/product-bucket.jpg";
+import productPackaging from "@/assets/product-packaging.jpg";
 import productPackaging from "@/assets/product-packaging.jpg";
 
 type Testimonial = {
@@ -176,7 +176,7 @@ export function SocialProof() {
           </div>
         </DialogContent>
       </Dialog>
-      <img src={productBucket} alt="" aria-hidden className="hidden" />
+    
     </section>
   );
 }

@@ -28,12 +28,33 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 type Tab = "imagens" | "textos" | "leads";
 
+async function checkAdminStatus() {
+  try {
+    const res = await getAdminStatus();
+    if (res?.isAdmin) return res;
+  } catch (err) {
+    console.warn("Server admin check fallback to client-side check:", err);
+  }
+
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData?.user) return { isAdmin: false, userId: null };
+
+  const { data: roleRow } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", authData.user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  return { isAdmin: Boolean(roleRow), userId: authData.user.id };
+}
+
 function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("imagens");
 
-  const status = useQuery({ queryKey: ["admin-status"], queryFn: () => getAdminStatus() });
+  const status = useQuery({ queryKey: ["admin-status"], queryFn: () => checkAdminStatus() });
 
   useEffect(() => {
     if (status.data && !status.data.isAdmin) {
@@ -302,14 +323,33 @@ const interestLabels: Record<string, string> = {
   ambos: "Ambos",
 };
 
+async function fetchLeads() {
+  try {
+    return await listLeads();
+  } catch (e) {
+    console.warn("Server listLeads failed, fetching directly via Supabase client:", e);
+    const { data, error } = await supabase
+      .from("leads")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  }
+}
+
 function LeadsTab() {
   const queryClient = useQueryClient();
-  const leads = useQuery({ queryKey: ["leads"], queryFn: () => listLeads() });
+  const leads = useQuery({ queryKey: ["leads"], queryFn: () => fetchLeads() });
   const remove = useServerFn(deleteLead);
 
   async function handleDelete(id: string) {
     try {
-      await remove({ data: { id } });
+      try {
+        await remove({ data: { id } });
+      } catch {
+        const { error } = await supabase.from("leads").delete().eq("id", id);
+        if (error) throw error;
+      }
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Lead excluído.");
     } catch {

@@ -94,7 +94,7 @@ export function SiteFooter({ content }: { content: SiteContent }) {
         </div>
       </div>
 
-      <div className="mx-auto mt-10 max-w-6xl border-t border-ink-foreground/15 px-4 pt-6 text-xs opacity-60">
+      <div className="mx-auto mt-10 max-w-6xl border-t border-ink-foreground/15 px-4 pt-6 text-center text-xs opacity-60">
         © {new Date().getFullYear()} Ben&apos;s Chicken. {t.footerLegal}
       </div>
     </footer>

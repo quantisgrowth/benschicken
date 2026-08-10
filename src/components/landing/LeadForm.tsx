@@ -85,6 +85,7 @@ export function LeadForm({
   const [sent, setSent] = useState(false);
 
   const range = rangeFor(interest);
+  const investmentValue = Math.min(Math.max(investment, range.min), range.max);
 
   function selectInterest(i: Interest) {
     onInterestChange(i);
@@ -134,7 +135,7 @@ export function LeadForm({
           city: city.trim(),
           uf,
           interest,
-          investment,
+          investment: investmentValue,
           experience,
           operationCity: operationCity.trim(),
         },
@@ -346,8 +347,8 @@ export function LeadForm({
                       Qual sua pretensão de investimento?
                     </label>
                     <p className="mt-3 text-2xl font-black text-brand sm:text-3xl">
-                      {brl(investment)}
-                      {investment === range.max && "+"}
+                      {brl(investmentValue)}
+                      {investmentValue === range.max && "+"}
                     </p>
                     <input
                       id="investimento"
@@ -355,7 +356,7 @@ export function LeadForm({
                       min={range.min}
                       max={range.max}
                       step={range.step}
-                      value={investment}
+                      value={investmentValue}
                       onChange={(e) => setInvestment(Number(e.target.value))}
                       className="mt-4 w-full accent-[var(--brand)]"
                     />

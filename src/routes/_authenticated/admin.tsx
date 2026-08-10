@@ -361,6 +361,11 @@ function LeadsTab() {
               </td>
               <td className="px-4 py-3">
                 {lead.city}/{lead.uf}
+                {lead.operation_city && (
+                  <span className="block text-xs text-muted-foreground">
+                    Operar em: {lead.operation_city}
+                  </span>
+                )}
               </td>
               <td className="px-4 py-3">
                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-brand">

@@ -7,9 +7,9 @@ export function SiteFooter({ content }: { content: SiteContent }) {
 
   return (
     <footer className="bg-ink py-14 text-ink-foreground">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 md:grid-cols-3">
-        <div>
-          <div className="flex min-w-0 items-center gap-2">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 text-center md:grid-cols-3">
+        <div className="flex flex-col items-center">
+          <div className="flex min-w-0 items-center justify-center gap-2">
             {logo ? (
               <img src={logo} alt="Ben's Chicken" className="h-12 w-auto object-contain" />
             ) : (
@@ -31,7 +31,7 @@ export function SiteFooter({ content }: { content: SiteContent }) {
             {t.footerContactTitle}
           </h3>
           <ul className="mt-4 space-y-3 text-sm opacity-85">
-            <li className="flex items-center gap-2">
+            <li className="flex items-center justify-center gap-2">
               <Phone className="h-4 w-4 shrink-0 text-brand" />
               {t.footerPhoneLink ? (
                 <a
@@ -46,13 +46,13 @@ export function SiteFooter({ content }: { content: SiteContent }) {
                 t.footerPhone
               )}
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex items-center justify-center gap-2">
               <Mail className="h-4 w-4 shrink-0 text-brand" />
               <a href={`mailto:${t.footerEmail}`} className="hover:text-brand">
                 {t.footerEmail}
               </a>
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex items-center justify-center gap-2">
               <Instagram className="h-4 w-4 shrink-0 text-brand" />
               {t.footerInstagramLink ? (
                 <a
@@ -94,7 +94,7 @@ export function SiteFooter({ content }: { content: SiteContent }) {
         </div>
       </div>
 
-      <div className="mx-auto mt-10 max-w-6xl border-t border-ink-foreground/15 px-4 pt-6 text-xs opacity-60">
+      <div className="mx-auto mt-10 max-w-6xl border-t border-ink-foreground/15 px-4 pt-6 text-center text-xs opacity-60">
         © {new Date().getFullYear()} Ben&apos;s Chicken. {t.footerLegal}
       </div>
     </footer>

@@ -14,16 +14,20 @@ import {
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
 
+const DEFAULT_SUPABASE_URL = "https://ozhuapszxxxzhabrqccs.supabase.co";
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96aHVhcHN6eHh4emhhYnJxY2NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzOTcxMzcsImV4cCI6MjEwMTk3MzEzN30.0GzeLgiJoul1Cjokkc8CI1EXKkq8KlOjjFWaqwUw0MU";
+
 function serverPublicClient() {
   const key =
     process.env["SUPABASE_PUBLISHABLE_KEY"] ||
     process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
     process.env["SUPABASE_ANON_KEY"] ||
-    "";
+    DEFAULT_SUPABASE_PUBLISHABLE_KEY;
   const url =
     process.env["SUPABASE_URL"] ||
     process.env["VITE_SUPABASE_URL"] ||
-    "";
+    DEFAULT_SUPABASE_URL;
 
   // Imported lazily so this never enters the client bundle.
   return import("@supabase/supabase-js").then(({ createClient }) =>

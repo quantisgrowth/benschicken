@@ -15,7 +15,7 @@ export function Metrics({ content }: { content: SiteContent }) {
   return (
     <section id="numeros" className="bg-ink py-20 text-ink-foreground sm:py-24">
       <div className="mx-auto max-w-6xl px-4">
-        <h2 className="text-center text-3xl font-black tracking-tight sm:text-4xl">
+        <h2 className="text-center text-3xl font-black tracking-tight text-ink-foreground sm:text-4xl">
           Números que fazem o <span className="text-brand">negócio girar</span>
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-center text-sm opacity-75 sm:text-base">

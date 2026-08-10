@@ -46,7 +46,7 @@ export function SiteFooter({ content }: { content: SiteContent }) {
                 t.footerPhone
               )}
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex items-center justify-center gap-2">
               <Mail className="h-4 w-4 shrink-0 text-brand" />
               <a href={`mailto:${t.footerEmail}`} className="hover:text-brand">
                 {t.footerEmail}

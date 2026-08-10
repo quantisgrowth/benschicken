@@ -5,7 +5,6 @@ import galleryTeam from "@/assets/gallery-team.jpg";
 import galleryDelivery from "@/assets/gallery-delivery.jpg";
 import darkKitchen from "@/assets/dark-kitchen.jpg";
 import productPackaging from "@/assets/product-packaging.jpg";
-import productPackaging from "@/assets/product-packaging.jpg";
 
 type Testimonial = {
   id: string;

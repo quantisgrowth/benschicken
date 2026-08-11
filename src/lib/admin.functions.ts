@@ -63,6 +63,25 @@ export const resetSiteContentKey = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+function parseJwtPayload(token: string): { sub?: string; exp?: number } | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const base64Url = parts[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(""),
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
 export const uploadAdminFile = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
@@ -78,15 +97,19 @@ export const uploadAdminFile = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(data.accessToken);
-    if (authError || !authData?.user) {
-      throw new Error("Sessão inválida ou expirada. Faça login novamente.");
+    const payload = parseJwtPayload(data.accessToken);
+    if (!payload || !payload.sub) {
+      throw new Error("Token de autenticação inválido.");
+    }
+
+    if (payload.exp && payload.exp * 1000 < Date.now() - 60000) {
+      throw new Error("Sessão expirada. Por favor, saia e faça login novamente.");
     }
 
     const { data: roleRow, error: roleError } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", authData.user.id)
+      .eq("user_id", payload.sub)
       .eq("role", "admin")
       .maybeSingle();
 
@@ -120,7 +143,7 @@ export const uploadAdminFile = createServerFn({ method: "POST" })
       key: data.key,
       value: path,
       updated_at: new Date().toISOString(),
-      updated_by: authData.user.id,
+      updated_by: payload.sub,
     });
 
     if (dbError) {

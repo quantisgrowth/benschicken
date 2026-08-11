@@ -227,10 +227,15 @@ function MaterialTab() {
     }
     setBusy("upload");
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      let { data: sessionData } = await supabase.auth.getSession();
+      let accessToken = sessionData?.session?.access_token;
+      if (!accessToken || (sessionData?.session?.expires_at && sessionData.session.expires_at * 1000 < Date.now() + 60000)) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        accessToken = refreshed?.session?.access_token;
+      }
+
       if (!accessToken) {
-        toast.error("Sua sessão expirou. Por favor, faça login novamente.");
+        toast.error("Sua sessão expirou. Por favor, faça login novamente no painel.");
         return;
       }
 

@@ -28,6 +28,7 @@ import {
   listLeads,
   resetSiteContentKey,
   saveSiteContent,
+  uploadAdminFile,
 } from "@/lib/admin.functions";
 import { IMAGE_FIELDS, TEXT_FIELDS, type ImageKey, type TextKey } from "@/lib/site-content";
 
@@ -165,11 +166,29 @@ const TESTIMONIAL_VIDEOS: Record<string, { key: TextKey; name: string }> = {
   testimonial3Image: { key: "testimonial3Video", name: "Rafael (Belo Horizonte)" },
 };
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(",")[1];
+      if (!base64) {
+        reject(new Error("Falha ao converter arquivo"));
+        return;
+      }
+      resolve(base64);
+    };
+    reader.onerror = () => reject(new Error("Falha na leitura do arquivo"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function MaterialTab() {
   const content = useContent();
   const queryClient = useQueryClient();
   const save = useServerFn(saveSiteContent);
   const reset = useServerFn(resetSiteContentKey);
+  const uploadFile = useServerFn(uploadAdminFile);
   const [busy, setBusy] = useState<string | null>(null);
   const [delaySeconds, setDelaySeconds] = useState<string>("5");
   const [savingDelay, setSavingDelay] = useState(false);
@@ -202,22 +221,25 @@ function MaterialTab() {
       toast.error("Por favor, selecione um arquivo em formato PDF (.pdf).");
       return;
     }
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error("O arquivo PDF deve ter no máximo 50 MB.");
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("O arquivo PDF deve ter no máximo 25 MB.");
       return;
     }
     setBusy("upload");
     try {
-      const path = `materials/apresentacao_${Date.now()}.pdf`;
-      const { error } = await supabase.storage
-        .from("site-images")
-        .upload(path, file, { contentType: "application/pdf", upsert: false });
-      if (error) throw error;
-
-      await persistData([{ key: "presentationFile", value: path }]);
+      const fileBase64 = await fileToBase64(file);
+      await uploadFile({
+        data: {
+          key: "presentationFile",
+          fileName: file.name,
+          fileBase64,
+          contentType: "application/pdf",
+        },
+      });
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Apresentação comercial em PDF atualizada com sucesso!");
     } catch (err) {
+      console.error("Upload error:", err);
       toast.error(err instanceof Error ? err.message : "Falha ao enviar o arquivo PDF.");
     } finally {
       setBusy(null);

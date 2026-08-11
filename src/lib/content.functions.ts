@@ -57,13 +57,18 @@ export const getSiteContent = createServerFn({ method: "GET" }).handler(
     if (error || !data) return { texts, images };
 
     const paths: Partial<Record<ImageKey, string>> = {};
-    const videoKeys: TextKey[] = ["testimonial1Video", "testimonial2Video", "testimonial3Video"];
-    const videoPaths: [TextKey, string][] = [];
+    const mediaKeys: TextKey[] = [
+      "testimonial1Video",
+      "testimonial2Video",
+      "testimonial3Video",
+      "presentationFile",
+    ];
+    const mediaPaths: [TextKey, string][] = [];
 
     for (const row of data as { key: string; value: string }[]) {
       if ((TEXT_KEYS as string[]).includes(row.key) && row.value) {
-        if (videoKeys.includes(row.key as TextKey) && !row.value.startsWith("http")) {
-          videoPaths.push([row.key as TextKey, row.value]);
+        if (mediaKeys.includes(row.key as TextKey) && !row.value.startsWith("http")) {
+          mediaPaths.push([row.key as TextKey, row.value]);
         } else {
           texts[row.key as TextKey] = row.value;
         }
@@ -73,7 +78,7 @@ export const getSiteContent = createServerFn({ method: "GET" }).handler(
     }
 
     const entries = Object.entries(paths) as [ImageKey, string][];
-    if (entries.length > 0 || videoPaths.length > 0) {
+    if (entries.length > 0 || mediaPaths.length > 0) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       if (entries.length > 0) {
         const { data: signed } = await supabaseAdmin.storage
@@ -88,16 +93,16 @@ export const getSiteContent = createServerFn({ method: "GET" }).handler(
         });
       }
 
-      if (videoPaths.length > 0) {
-        const { data: signedVideos } = await supabaseAdmin.storage
+      if (mediaPaths.length > 0) {
+        const { data: signedMedia } = await supabaseAdmin.storage
           .from("site-images")
           .createSignedUrls(
-            videoPaths.map(([, p]) => p),
+            mediaPaths.map(([, p]) => p),
             SIGNED_URL_TTL,
           );
-        signedVideos?.forEach((s, i) => {
-          const vEntry = videoPaths[i];
-          if (vEntry && s.signedUrl) texts[vEntry[0]] = s.signedUrl;
+        signedMedia?.forEach((s, i) => {
+          const mEntry = mediaPaths[i];
+          if (mEntry && s.signedUrl) texts[mEntry[0]] = s.signedUrl;
         });
       }
     }

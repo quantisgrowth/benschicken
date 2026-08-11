@@ -1,5 +1,15 @@
-import { ArrowLeft, ArrowRight, CheckCircle2, Download, Loader2, ShieldCheck } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Download,
+  FileText,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +91,63 @@ export function LeadForm({
 
   const range = rangeFor(interest);
   const investmentValue = Math.min(Math.max(investment, range.min), range.max);
+
+  const presentationUrl = content.texts.presentationFile;
+  const configuredDelay = parseInt(content.texts.presentationAutoDownloadSeconds || "5", 10);
+  const autoDelay = isNaN(configuredDelay) ? 5 : Math.max(0, configuredDelay);
+
+  const [downloadTriggered, setDownloadTriggered] = useState(false);
+  const [countdown, setCountdown] = useState<number>(autoDelay);
+  const downloadTriggeredRef = useRef(false);
+
+  function triggerDownload() {
+    if (!presentationUrl || downloadTriggeredRef.current) return;
+    downloadTriggeredRef.current = true;
+    setDownloadTriggered(true);
+    const link = document.createElement("a");
+    link.href = presentationUrl;
+    link.download = "Apresentacao-Comercial-Bens-Chicken.pdf";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function handleManualDownload() {
+    if (!presentationUrl) return;
+    downloadTriggeredRef.current = true;
+    setDownloadTriggered(true);
+    const link = document.createElement("a");
+    link.href = presentationUrl;
+    link.download = "Apresentacao-Comercial-Bens-Chicken.pdf";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  useEffect(() => {
+    if (!sent || !presentationUrl || autoDelay <= 0) return;
+
+    setCountdown(autoDelay);
+    downloadTriggeredRef.current = false;
+    setDownloadTriggered(false);
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          triggerDownload();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sent, presentationUrl, autoDelay]);
 
   function selectInterest(i: Interest) {
     onInterestChange(i);
@@ -195,13 +262,61 @@ export function LeadForm({
 
         <div className="mt-10 rounded-[2rem] border-2 border-brand/25 bg-card p-6 shadow-xl sm:p-10">
           {sent ? (
-            <div className="py-10 text-center">
-              <CheckCircle2 className="mx-auto h-14 w-14 text-brand" />
-              <h3 className="mt-4 text-2xl font-black">Recebemos seus dados!</h3>
-              <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-                Em instantes você receberá a apresentação comercial e o comparativo DRE no e-mail
-                informado. Nosso time de expansão entrará em contato pelo WhatsApp.
+            <div className="py-8 text-center sm:py-10">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-10 w-10" />
+              </div>
+              <h3 className="mt-4 text-2xl font-black sm:text-3xl">Cadastro Realizado com Sucesso!</h3>
+              <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground sm:text-base">
+                Recebemos seus dados. Nosso time de expansão entrará em contato pelo WhatsApp para tirar dúvidas e avançar.
               </p>
+
+              {presentationUrl ? (
+                <div className="mt-8 rounded-3xl border border-brand/30 bg-brand/5 p-6 dark:bg-brand/10 sm:p-8">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand text-brand-foreground shadow-md shadow-brand/30">
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  <h4 className="mt-3 text-lg font-black text-foreground sm:text-xl">
+                    Apresentação Comercial Ben&apos;s Chicken
+                  </h4>
+                  <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground sm:text-sm">
+                    Acesse o material completo explicando sobre os modelos de Franquia, Licenciamento e estimativas de faturamento.
+                  </p>
+
+                  <div className="mt-6 flex flex-col items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleManualDownload}
+                      className="inline-flex w-full sm:w-auto items-center justify-center gap-2.5 rounded-full bg-brand px-8 py-4 text-sm sm:text-base font-black uppercase tracking-wider text-brand-foreground shadow-lg shadow-brand/25 transition-all hover:scale-[1.02] hover:bg-brand-dark active:scale-[0.98]"
+                    >
+                      <Download className="h-5 w-5" />
+                      <span>Baixar Apresentação Comercial (PDF)</span>
+                    </button>
+
+                    {autoDelay > 0 && !downloadTriggered ? (
+                      <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5 text-brand animate-pulse" />
+                        <span>
+                          O download iniciará automaticamente em <strong className="text-foreground">{countdown}s</strong>
+                        </span>
+                      </div>
+                    ) : downloadTriggered ? (
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>
+                          Download iniciado! Se não começou sozinho, clique no botão acima para baixar.
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-2xl border border-border bg-secondary/30 p-4">
+                  <p className="text-xs text-muted-foreground">
+                    Em instantes nossa equipe enviará o material comercial completo diretamente para o seu WhatsApp.
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate className="space-y-5">

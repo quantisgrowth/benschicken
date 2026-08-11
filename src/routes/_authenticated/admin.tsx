@@ -2,7 +2,23 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Film, ImageIcon, Link2, Loader2, LogOut, Trash2, Type, UploadCloud, Users } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  Download,
+  ExternalLink,
+  FileDown,
+  FileText,
+  Film,
+  ImageIcon,
+  Link2,
+  Loader2,
+  LogOut,
+  Trash2,
+  Type,
+  UploadCloud,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getSiteContent } from "@/lib/content.functions";
@@ -13,20 +29,20 @@ import {
   resetSiteContentKey,
   saveSiteContent,
 } from "@/lib/admin.functions";
-import { IMAGE_FIELDS, TEXT_FIELDS, type ImageKey } from "@/lib/site-content";
+import { IMAGE_FIELDS, TEXT_FIELDS, type ImageKey, type TextKey } from "@/lib/site-content";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Painel administrativo | Ben's Chicken" },
-      { name: "description", content: "Gerencie imagens, textos e leads da landing page." },
+      { name: "description", content: "Gerencie imagens, textos, apresentação e leads da landing page." },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: AdminPage,
 });
 
-type Tab = "imagens" | "textos" | "leads";
+type Tab = "material" | "imagens" | "textos" | "leads";
 
 async function checkAdminStatus() {
   try {
@@ -107,7 +123,8 @@ function AdminPage() {
             <nav className="mb-6 flex flex-wrap gap-2">
               {(
                 [
-                  ["imagens", "Imagens", ImageIcon],
+                  ["material", "Apresentação & Material", FileText],
+                  ["imagens", "Imagens & Vídeos", ImageIcon],
                   ["textos", "Textos", Type],
                   ["leads", "Leads", Users],
                 ] as const
@@ -127,6 +144,7 @@ function AdminPage() {
               ))}
             </nav>
 
+            {tab === "material" && <MaterialTab />}
             {tab === "imagens" && <ImagesTab />}
             {tab === "textos" && <TextsTab />}
             {tab === "leads" && <LeadsTab />}
@@ -146,6 +164,278 @@ const TESTIMONIAL_VIDEOS: Record<string, { key: TextKey; name: string }> = {
   testimonial2Image: { key: "testimonial2Video", name: "Juliana (Campinas)" },
   testimonial3Image: { key: "testimonial3Video", name: "Rafael (Belo Horizonte)" },
 };
+
+function MaterialTab() {
+  const content = useContent();
+  const queryClient = useQueryClient();
+  const save = useServerFn(saveSiteContent);
+  const reset = useServerFn(resetSiteContentKey);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [delaySeconds, setDelaySeconds] = useState<string>("5");
+  const [savingDelay, setSavingDelay] = useState(false);
+
+  useEffect(() => {
+    if (content.data?.texts?.presentationAutoDownloadSeconds !== undefined) {
+      setDelaySeconds(content.data.texts.presentationAutoDownloadSeconds);
+    }
+  }, [content.data]);
+
+  async function persistData(rows: { key: string; value: string }[]) {
+    try {
+      await save({ data: rows });
+    } catch (err) {
+      console.warn("Server save fallback to client-side supabase:", err);
+      const { data: user } = await supabase.auth.getUser();
+      const payload = rows.map((r) => ({
+        key: r.key,
+        value: r.value,
+        updated_at: new Date().toISOString(),
+        updated_by: user?.user?.id ?? null,
+      }));
+      const { error } = await supabase.from("site_content").upsert(payload);
+      if (error) throw error;
+    }
+  }
+
+  async function uploadPdf(file: File) {
+    if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
+      toast.error("Por favor, selecione um arquivo em formato PDF (.pdf).");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("O arquivo PDF deve ter no máximo 50 MB.");
+      return;
+    }
+    setBusy("upload");
+    try {
+      const path = `materials/apresentacao_${Date.now()}.pdf`;
+      const { error } = await supabase.storage
+        .from("site-images")
+        .upload(path, file, { contentType: "application/pdf", upsert: false });
+      if (error) throw error;
+
+      await persistData([{ key: "presentationFile", value: path }]);
+      await queryClient.invalidateQueries({ queryKey: ["site-content"] });
+      toast.success("Apresentação comercial em PDF atualizada com sucesso!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao enviar o arquivo PDF.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function removePdf() {
+    setBusy("remove");
+    try {
+      try {
+        await reset({ data: { key: "presentationFile" } });
+      } catch (err) {
+        console.warn("Server reset fallback to client-side supabase:", err);
+        const { error } = await supabase.from("site_content").delete().eq("key", "presentationFile");
+        if (error) throw error;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["site-content"] });
+      toast.success("Apresentação comercial removida.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao remover o arquivo.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleSaveDelay() {
+    const num = parseInt(delaySeconds, 10);
+    if (isNaN(num) || num < 0 || num > 120) {
+      toast.error("Informe um tempo válido em segundos (entre 0 e 120).");
+      return;
+    }
+    setSavingDelay(true);
+    try {
+      await persistData([{ key: "presentationAutoDownloadSeconds", value: String(num) }]);
+      await queryClient.invalidateQueries({ queryKey: ["site-content"] });
+      toast.success("Tempo de download automático salvo com sucesso!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao salvar configuração de tempo.");
+    } finally {
+      setSavingDelay(false);
+    }
+  }
+
+  const currentPdfUrl = content.data?.texts?.presentationFile;
+  const isUploaded = Boolean(currentPdfUrl && currentPdfUrl.length > 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Card 1: Upload da Apresentação */}
+      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-black tracking-tight text-foreground">
+              Apresentação Comercial (PDF)
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Arquivo disponibilizado para download pelo Lead após o preenchimento do formulário na Landing Page.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-border bg-secondary/30 p-5">
+          {isUploaded ? (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand/15 text-brand">
+                  <FileDown className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-foreground">Apresentação Ativa</p>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="h-3 w-3" /> Disponível para Download
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    O lead receberá e poderá baixar este arquivo PDF assim que enviar o formulário.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={currentPdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-bold text-foreground transition-colors hover:border-brand hover:text-brand"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>Testar / Visualizar</span>
+                </a>
+
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-brand px-3.5 py-2 text-xs font-bold uppercase tracking-wide text-brand-foreground transition-colors hover:bg-brand-dark">
+                  {busy === "upload" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <UploadCloud className="h-3.5 w-3.5" />
+                  )}
+                  <span>Trocar PDF</span>
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    disabled={busy !== null}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (file) void uploadPdf(file);
+                    }}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => void removePdf()}
+                  disabled={busy !== null}
+                  className="inline-flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-semibold text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  {busy === "remove" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5" />
+                  )}
+                  <span>Remover</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
+                <FileText className="h-7 w-7" />
+              </div>
+              <h3 className="mt-3 text-sm font-bold text-foreground">
+                Nenhum arquivo PDF cadastrado
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
+                Suba o arquivo PDF da apresentação comercial para habilitar o botão e o download automático na Landing Page.
+              </p>
+
+              <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-brand px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-brand-foreground transition-colors hover:bg-brand-dark shadow-sm">
+                {busy === "upload" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UploadCloud className="h-4 w-4" />
+                )}
+                <span>Selecionar arquivo PDF (até 50MB)</span>
+                <input
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="hidden"
+                  disabled={busy !== null}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) void uploadPdf(file);
+                  }}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Card 2: Tempo de Download Automático */}
+      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand">
+            <Clock className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-black tracking-tight text-foreground">
+              Início Automático do Download
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Configure o tempo de espera antes do download iniciar automaticamente após o cadastro.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 max-w-md space-y-4">
+          <div>
+            <label htmlFor="delaySeconds" className="mb-2 block text-sm font-bold text-foreground">
+              Tempo de contagem regressiva (em segundos)
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                id="delaySeconds"
+                type="number"
+                min="0"
+                max="120"
+                value={delaySeconds}
+                onChange={(e) => setDelaySeconds(e.target.value)}
+                className="w-32 rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25"
+              />
+              <span className="text-sm font-medium text-muted-foreground">segundos</span>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+              <strong>Recomendação:</strong> 5 segundos permite que o lead veja a confirmação antes do download disparar. Defina <strong>0</strong> caso queira que o download ocorra apenas quando o lead clicar no botão.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void handleSaveDelay()}
+            disabled={savingDelay}
+            className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-brand-foreground transition-colors hover:bg-brand-dark disabled:opacity-60"
+          >
+            {savingDelay && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Salvar tempo de espera
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ImagesTab() {
   const content = useContent();
@@ -557,7 +847,11 @@ function TextsTab() {
   return (
     <div className="rounded-3xl border border-border bg-card p-6">
       <div className="grid gap-5 sm:grid-cols-2">
-        {TEXT_FIELDS.map((field) => (
+        {TEXT_FIELDS.filter(
+          (field) =>
+            field.key !== "presentationFile" &&
+            field.key !== "presentationAutoDownloadSeconds",
+        ).map((field) => (
           <div key={field.key} className={field.multiline ? "sm:col-span-2" : ""}>
             <label htmlFor={field.key} className="mb-2 block text-sm font-bold">
               {field.label}

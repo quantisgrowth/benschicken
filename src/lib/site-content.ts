@@ -185,6 +185,18 @@ export const TEXT_FIELDS = [
     default: "",
     multiline: false,
   },
+  {
+    key: "presentationFile",
+    label: "Apresentação Comercial (Arquivo PDF)",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "presentationAutoDownloadSeconds",
+    label: "Tempo para início do download automático (segundos)",
+    default: "5",
+    multiline: false,
+  },
 ] as const;
 
 export type TextKey = (typeof TEXT_FIELDS)[number]["key"];

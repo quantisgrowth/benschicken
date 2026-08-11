@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ImageIcon, Loader2, LogOut, Type, Users } from "lucide-react";
+import { Film, ImageIcon, Link2, Loader2, LogOut, Trash2, Type, UploadCloud, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getSiteContent } from "@/lib/content.functions";
@@ -141,12 +141,24 @@ function useContent() {
   return useQuery({ queryKey: ["site-content"], queryFn: () => getSiteContent() });
 }
 
+const TESTIMONIAL_VIDEOS: Record<string, { key: TextKey; name: string }> = {
+  testimonial1Image: { key: "testimonial1Video", name: "Carlos (Curitiba)" },
+  testimonial2Image: { key: "testimonial2Video", name: "Juliana (Campinas)" },
+  testimonial3Image: { key: "testimonial3Video", name: "Rafael (Belo Horizonte)" },
+};
+
 function ImagesTab() {
   const content = useContent();
   const queryClient = useQueryClient();
   const save = useServerFn(saveSiteContent);
   const reset = useServerFn(resetSiteContentKey);
-  const [busy, setBusy] = useState<ImageKey | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [linkModal, setLinkModal] = useState<{
+    key: TextKey;
+    name: string;
+    url: string;
+  } | null>(null);
+  const [urlInput, setUrlInput] = useState("");
 
   async function upload(key: ImageKey, file: File) {
     if (file.size > 10 * 1024 * 1024) {
@@ -163,9 +175,61 @@ function ImagesTab() {
       if (error) throw error;
       await save({ data: [{ key, value: path }] });
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
-      toast.success("Imagem atualizada.");
+      toast.success("Imagem de capa atualizada.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao enviar a imagem.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function uploadVideo(key: TextKey, file: File) {
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("O vídeo deve ter no máximo 50 MB.");
+      return;
+    }
+    setBusy(key);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
+      const path = `videos/${key}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("site-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (error) throw error;
+      await save({ data: [{ key, value: path }] });
+      await queryClient.invalidateQueries({ queryKey: ["site-content"] });
+      toast.success("Arquivo de vídeo enviado com sucesso.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao enviar o vídeo.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function saveVideoUrl() {
+    if (!linkModal) return;
+    setBusy(linkModal.key);
+    try {
+      await save({ data: [{ key: linkModal.key, value: urlInput.trim() }] });
+      await queryClient.invalidateQueries({ queryKey: ["site-content"] });
+      toast.success("Link do vídeo atualizado.");
+      setLinkModal(null);
+      setUrlInput("");
+    } catch (err) {
+      toast.error("Falha ao salvar link do vídeo.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function removeVideo(key: TextKey) {
+    setBusy(key);
+    try {
+      await reset({ data: { key } });
+      await queryClient.invalidateQueries({ queryKey: ["site-content"] });
+      toast.success("Vídeo removido.");
+    } catch {
+      toast.error("Falha ao remover vídeo.");
     } finally {
       setBusy(null);
     }
@@ -202,49 +266,158 @@ function ImagesTab() {
             <div className="grid gap-5 sm:grid-cols-2">
               {fields.map((field) => {
                 const url = content.data?.images[field.key] ?? null;
+                const videoConfig = TESTIMONIAL_VIDEOS[field.key];
+                const videoValue = videoConfig
+                  ? content.data?.texts[videoConfig.key] || ""
+                  : "";
+
+                const isYouTube =
+                  videoValue.includes("youtube.com") || videoValue.includes("youtu.be");
+                const isVimeo = videoValue.includes("vimeo.com");
+                const isUploadedVideo =
+                  videoValue.length > 0 && !isYouTube && !isVimeo;
+
                 return (
-                  <div key={field.key} className="rounded-3xl border border-border bg-card p-5">
-                    <p className="text-sm font-bold">{field.label}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Tamanho recomendado: {field.size} · máx. 10 MB
-                    </p>
-                    <div className="mt-3 aspect-video overflow-hidden rounded-2xl bg-secondary">
-                      {url ? (
-                        <img src={url} alt={field.label} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="grid h-full place-items-center text-xs text-muted-foreground">
-                          Usando a imagem padrão do site
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand px-4 py-2 text-xs font-bold uppercase tracking-wide text-brand-foreground transition-colors hover:bg-brand-dark">
-                        {busy === field.key ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                  <div
+                    key={field.key}
+                    className="flex flex-col justify-between rounded-3xl border border-border bg-card p-5"
+                  >
+                    <div>
+                      <p className="text-sm font-bold">{field.label}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Tamanho recomendado: {field.size} · máx. 10 MB
+                      </p>
+
+                      {/* Thumbnail Preview */}
+                      <div className="mt-3 aspect-video overflow-hidden rounded-2xl bg-secondary">
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={field.label}
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
-                          <ImageIcon className="h-4 w-4" />
+                          <div className="grid h-full place-items-center text-xs text-muted-foreground">
+                            Usando a imagem padrão do site
+                          </div>
                         )}
-                        Trocar imagem
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          disabled={busy !== null}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            e.target.value = "";
-                            if (file) void upload(field.key, file);
-                          }}
-                        />
-                      </label>
-                      {url && (
-                        <button
-                          onClick={() => void restore(field.key)}
-                          disabled={busy !== null}
-                          className="text-xs font-bold text-muted-foreground underline-offset-4 hover:text-brand hover:underline"
-                        >
-                          Restaurar padrão
-                        </button>
+                      </div>
+
+                      {/* Image action buttons */}
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand px-4 py-2 text-xs font-bold uppercase tracking-wide text-brand-foreground transition-colors hover:bg-brand-dark">
+                          {busy === field.key ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ImageIcon className="h-4 w-4" />
+                          )}
+                          Trocar capa
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={busy !== null}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = "";
+                              if (file) void upload(field.key, file);
+                            }}
+                          />
+                        </label>
+                        {url && (
+                          <button
+                            onClick={() => void restore(field.key)}
+                            disabled={busy !== null}
+                            className="text-xs font-bold text-muted-foreground underline-offset-4 hover:text-brand hover:underline"
+                          >
+                            Restaurar capa
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Testimonial Video Controls */}
+                      {videoConfig && (
+                        <div className="mt-5 rounded-2xl border border-border/80 bg-secondary/50 p-4">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              Vídeo do Depoimento
+                            </span>
+                            {videoValue ? (
+                              <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                                {isYouTube
+                                  ? "YouTube ativo"
+                                  : isVimeo
+                                  ? "Vimeo ativo"
+                                  : "Arquivo de vídeo ativo"}
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                Sem vídeo configurado
+                              </span>
+                            )}
+                          </div>
+
+                          {videoValue && (
+                            <p className="mt-2 truncate text-xs text-muted-foreground" title={videoValue}>
+                              {isUploadedVideo ? "Arquivo enviado no storage" : videoValue}
+                            </p>
+                          )}
+
+                          {/* 2 Dedicated Video Buttons */}
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            {/* Option 1: Upload Video File */}
+                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-bold text-foreground transition-colors hover:border-brand/40 hover:bg-secondary hover:text-brand">
+                              {busy === videoConfig.key ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <UploadCloud className="h-3.5 w-3.5" />
+                              )}
+                              <span>Subir arquivo de vídeo</span>
+                              <input
+                                type="file"
+                                accept="video/mp4,video/webm,video/quicktime,video/*"
+                                className="hidden"
+                                disabled={busy !== null}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  e.target.value = "";
+                                  if (file) void uploadVideo(videoConfig.key, file);
+                                }}
+                              />
+                            </label>
+
+                            {/* Option 2: Insert YouTube/Vimeo Link */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLinkModal({
+                                  key: videoConfig.key,
+                                  name: videoConfig.name,
+                                  url: isUploadedVideo ? "" : videoValue,
+                                });
+                                setUrlInput(isUploadedVideo ? "" : videoValue);
+                              }}
+                              disabled={busy !== null}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-bold text-foreground transition-colors hover:border-brand/40 hover:bg-secondary hover:text-brand"
+                            >
+                              <Link2 className="h-3.5 w-3.5" />
+                              <span>Inserir link (YouTube/Vimeo)</span>
+                            </button>
+
+                            {/* Remove Video */}
+                            {videoValue && (
+                              <button
+                                type="button"
+                                onClick={() => void removeVideo(videoConfig.key)}
+                                disabled={busy !== null}
+                                className="inline-flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-semibold text-destructive/80 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                <span>Remover</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -254,6 +427,52 @@ function ImagesTab() {
           </section>
         );
       })}
+
+      {/* Modal for YouTube/Vimeo Link */}
+      {linkModal && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl">
+            <h3 className="text-lg font-black tracking-tight text-foreground">
+              Link do Vídeo — {linkModal.name}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Cole o link do vídeo do YouTube (inclusive Shorts) ou Vimeo.
+            </p>
+
+            <input
+              type="url"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=... ou https://vimeo.com/..."
+              className="mt-4 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-brand focus:outline-none"
+              autoFocus
+            />
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setLinkModal(null);
+                  setUrlInput("");
+                }}
+                disabled={busy !== null}
+                className="rounded-xl border border-border px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveVideoUrl()}
+                disabled={busy !== null}
+                className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-brand-foreground hover:bg-brand-dark"
+              >
+                {busy === linkModal.key && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Salvar link
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

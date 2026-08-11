@@ -57,27 +57,49 @@ export const getSiteContent = createServerFn({ method: "GET" }).handler(
     if (error || !data) return { texts, images };
 
     const paths: Partial<Record<ImageKey, string>> = {};
+    const videoKeys: TextKey[] = ["testimonial1Video", "testimonial2Video", "testimonial3Video"];
+    const videoPaths: [TextKey, string][] = [];
+
     for (const row of data as { key: string; value: string }[]) {
       if ((TEXT_KEYS as string[]).includes(row.key) && row.value) {
-        texts[row.key as TextKey] = row.value;
+        if (videoKeys.includes(row.key as TextKey) && !row.value.startsWith("http")) {
+          videoPaths.push([row.key as TextKey, row.value]);
+        } else {
+          texts[row.key as TextKey] = row.value;
+        }
       } else if ((IMAGE_KEYS as string[]).includes(row.key) && row.value) {
         paths[row.key as ImageKey] = row.value;
       }
     }
 
     const entries = Object.entries(paths) as [ImageKey, string][];
-    if (entries.length > 0) {
+    if (entries.length > 0 || videoPaths.length > 0) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: signed } = await supabaseAdmin.storage
-        .from("site-images")
-        .createSignedUrls(
-          entries.map(([, p]) => p),
-          SIGNED_URL_TTL,
-        );
-      signed?.forEach((s, i) => {
-        const entry = entries[i];
-        if (entry && s.signedUrl) images[entry[0]] = s.signedUrl;
-      });
+      if (entries.length > 0) {
+        const { data: signed } = await supabaseAdmin.storage
+          .from("site-images")
+          .createSignedUrls(
+            entries.map(([, p]) => p),
+            SIGNED_URL_TTL,
+          );
+        signed?.forEach((s, i) => {
+          const entry = entries[i];
+          if (entry && s.signedUrl) images[entry[0]] = s.signedUrl;
+        });
+      }
+
+      if (videoPaths.length > 0) {
+        const { data: signedVideos } = await supabaseAdmin.storage
+          .from("site-images")
+          .createSignedUrls(
+            videoPaths.map(([, p]) => p),
+            SIGNED_URL_TTL,
+          );
+        signedVideos?.forEach((s, i) => {
+          const vEntry = videoPaths[i];
+          if (vEntry && s.signedUrl) texts[vEntry[0]] = s.signedUrl;
+        });
+      }
     }
 
     return { texts, images };

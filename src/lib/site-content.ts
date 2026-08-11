@@ -167,6 +167,24 @@ export const TEXT_FIELDS = [
       "Todos os direitos reservados. As projeções apresentadas são estimativas baseadas em operações existentes e não constituem garantia de resultado.",
     multiline: true,
   },
+  {
+    key: "testimonial1Video",
+    label: "Depoimento 1 (Carlos) — Vídeo (Link YouTube/Vimeo ou arquivo)",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "testimonial2Video",
+    label: "Depoimento 2 (Juliana) — Vídeo (Link YouTube/Vimeo ou arquivo)",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "testimonial3Video",
+    label: "Depoimento 3 (Rafael) — Vídeo (Link YouTube/Vimeo ou arquivo)",
+    default: "",
+    multiline: false,
+  },
 ] as const;
 
 export type TextKey = (typeof TEXT_FIELDS)[number]["key"];

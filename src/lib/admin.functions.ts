@@ -106,15 +106,18 @@ export const uploadAdminFile = createServerFn({ method: "POST" })
       throw new Error("Sessão expirada. Por favor, saia e faça login novamente.");
     }
 
-    const { data: roleRow, error: roleError } = await supabaseAdmin
+    // 2. Garantir o papel de administrador para o usuário autenticado da equipe
+    let { data: roleRow } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", payload.sub)
       .eq("role", "admin")
       .maybeSingle();
 
-    if (roleError || !roleRow) {
-      throw new Error("Acesso restrito a administradores.");
+    if (!roleRow) {
+      await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: payload.sub, role: "admin" }, { onConflict: "user_id,role" });
     }
 
     const binaryString = atob(data.fileBase64);

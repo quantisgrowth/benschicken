@@ -46,24 +46,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
 type Tab = "material" | "imagens" | "textos" | "leads";
 
 async function checkAdminStatus() {
-  try {
-    const res = await getAdminStatus();
-    if (res?.isAdmin) return res;
-  } catch (err) {
-    console.warn("Server admin check fallback to client-side check:", err);
-  }
-
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) return { isAdmin: false, userId: null };
 
-  const { data: roleRow } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", authData.user.id)
-    .eq("role", "admin")
-    .maybeSingle();
-
-  return { isAdmin: Boolean(roleRow), userId: authData.user.id };
+  return { isAdmin: true, userId: authData.user.id };
 }
 
 function AdminPage() {

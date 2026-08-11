@@ -34,21 +34,21 @@ export function Hero({ content }: { content: SiteContent }) {
             {t.heroSubtitle}
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col items-stretch gap-3.5 sm:flex-row sm:items-center">
             <button
               type="button"
               onClick={focusForm}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-7 py-4 text-sm font-bold uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-all hover:bg-brand-dark hover:scale-[1.03] sm:text-base"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-brand to-brand-dark px-6 py-3.5 text-sm font-bold text-brand-foreground shadow-md shadow-brand/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand/30 active:translate-y-0 sm:text-base"
             >
-              Receber Apresentação Financeira
-              <ArrowRight className="h-5 w-5" />
+              <span>Receber Apresentação Financeira</span>
+              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
             </button>
             <a
               href="#como-funciona"
-              className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-ink/15 px-7 py-4 text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:border-brand hover:text-brand sm:text-base"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-card/80 px-6 py-3.5 text-sm font-semibold text-foreground backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/40 hover:bg-secondary hover:text-brand active:translate-y-0 sm:text-base"
             >
-              <PlayCircle className="h-5 w-5" />
-              Ver Como Funciona
+              <PlayCircle className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-brand" />
+              <span>Ver como funciona</span>
             </a>
           </div>
 

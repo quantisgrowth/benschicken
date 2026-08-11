@@ -120,10 +120,10 @@ export function ModelCards({
                 <a
                   href="#form"
                   onClick={() => onSelect(m.id)}
-                  className={`mt-8 inline-flex items-center justify-center rounded-full px-6 py-4 text-sm font-bold uppercase tracking-wide transition-transform hover:scale-[1.03] sm:text-base ${
+                  className={`mt-8 inline-flex items-center justify-center rounded-2xl px-6 py-3.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 sm:text-base ${
                     isGold
-                      ? "border-2 border-brand bg-background text-brand hover:bg-secondary"
-                      : "bg-brand text-brand-foreground shadow-lg shadow-brand/30 hover:bg-brand-dark"
+                      ? "border border-brand/50 bg-background text-brand hover:border-brand hover:bg-secondary"
+                      : "bg-gradient-to-r from-brand to-brand-dark text-brand-foreground shadow-md shadow-brand/20 hover:shadow-lg hover:shadow-brand/30"
                   }`}
                 >
                   {m.cta}

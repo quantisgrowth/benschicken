@@ -43,7 +43,7 @@ export function SiteHeader({ content }: { content: SiteContent }) {
           ))}
           <a
             href="#form"
-            className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-brand-foreground shadow-lg shadow-brand/25 transition-all hover:bg-brand-dark hover:scale-105"
+            className="rounded-xl bg-gradient-to-r from-brand to-brand-dark px-5 py-2.5 text-sm font-bold text-brand-foreground shadow-sm shadow-brand/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-brand/30 active:translate-y-0"
           >
             Quero Saber Mais
           </a>

@@ -314,10 +314,10 @@ export function LeadForm({
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-4 text-sm font-black uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-all hover:scale-[1.02] hover:bg-brand-dark sm:text-base"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand to-brand-dark px-6 py-3.5 text-sm font-bold text-brand-foreground shadow-md shadow-brand/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand/30 active:translate-y-0 sm:text-base"
                   >
-                    Continuar
-                    <ArrowRight className="h-5 w-5 shrink-0" />
+                    <span>Continuar</span>
+                    <ArrowRight className="h-4 w-4 shrink-0" />
                   </button>
                 </>
               ) : (
@@ -430,14 +430,14 @@ export function LeadForm({
                     <button
                       type="submit"
                       disabled={sending}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-4 text-sm font-black uppercase tracking-wide text-brand-foreground shadow-xl shadow-brand/30 transition-all hover:scale-[1.02] hover:bg-brand-dark disabled:opacity-60 sm:text-base"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand to-brand-dark px-6 py-3.5 text-sm font-bold text-brand-foreground shadow-md shadow-brand/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand/30 active:translate-y-0 disabled:opacity-60 sm:text-base"
                     >
                       {sending ? (
                         <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
                       ) : (
                         <Download className="h-5 w-5 shrink-0" />
                       )}
-                      Enviar informações e Baixar Material
+                      <span>Enviar e Baixar Material</span>
                     </button>
                     <button
                       type="button"
@@ -445,10 +445,10 @@ export function LeadForm({
                         setErrors({});
                         setStep(1);
                       }}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-border px-6 py-4 text-sm font-bold text-muted-foreground transition-colors hover:border-brand/40 hover:text-foreground sm:w-auto"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-card/80 px-6 py-3.5 text-sm font-semibold text-muted-foreground backdrop-blur transition-all duration-200 hover:border-brand/40 hover:bg-secondary hover:text-foreground sm:w-auto"
                     >
                       <ArrowLeft className="h-4 w-4 shrink-0" />
-                      Voltar
+                      <span>Voltar</span>
                     </button>
                   </div>
                 </>

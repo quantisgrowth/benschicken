@@ -40,13 +40,6 @@ function rangeFor(interest: Interest | null) {
   return INVESTMENT_RANGES.default;
 }
 
-const CITY_SUGGESTIONS = [
-  "São Paulo - SP","Campinas - SP","Santos - SP","Rio de Janeiro - RJ","Niterói - RJ",
-  "Belo Horizonte - MG","Uberlândia - MG","Curitiba - PR","Londrina - PR","Porto Alegre - RS",
-  "Florianópolis - SC","Joinville - SC","Salvador - BA","Recife - PE","Fortaleza - CE",
-  "Brasília - DF","Goiânia - GO","Cuiabá - MT","Campo Grande - MS","Belém - PA","Manaus - AM",
-];
-
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
@@ -363,17 +356,12 @@ export function LeadForm({
                     </label>
                     <input
                       id="cidade-operacao"
-                      list="cidades-operacao"
+                      type="text"
                       value={operationCity}
                       onChange={(e) => setOperationCity(e.target.value)}
                       placeholder="Ex.: Curitiba - PR"
                       className={inputClass}
                     />
-                    <datalist id="cidades-operacao">
-                      {CITY_SUGGESTIONS.map((c) => (
-                        <option key={c} value={c} />
-                      ))}
-                    </datalist>
                     {errors['operationCity'] && (
                       <p className="mt-1 text-xs text-destructive">{errors['operationCity']}</p>
                     )}

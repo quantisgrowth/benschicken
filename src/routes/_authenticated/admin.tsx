@@ -227,9 +227,17 @@ function MaterialTab() {
     }
     setBusy("upload");
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) {
+        toast.error("Sua sessão expirou. Por favor, faça login novamente.");
+        return;
+      }
+
       const fileBase64 = await fileToBase64(file);
       await uploadFile({
         data: {
+          accessToken,
           key: "presentationFile",
           fileName: file.name,
           fileBase64,

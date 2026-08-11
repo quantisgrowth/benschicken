@@ -64,10 +64,10 @@ export const resetSiteContentKey = createServerFn({ method: "POST" })
   });
 
 export const uploadAdminFile = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
+        accessToken: z.string().min(1),
         key: z.string().min(1).max(64),
         fileName: z.string().min(1).max(255),
         fileBase64: z.string().min(1),
@@ -75,9 +75,24 @@ export const uploadAdminFile = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(data.accessToken);
+    if (authError || !authData?.user) {
+      throw new Error("Sessão inválida ou expirada. Faça login novamente.");
+    }
+
+    const { data: roleRow, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", authData.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (roleError || !roleRow) {
+      throw new Error("Acesso restrito a administradores.");
+    }
 
     const binaryString = atob(data.fileBase64);
     const len = binaryString.length;
@@ -105,7 +120,7 @@ export const uploadAdminFile = createServerFn({ method: "POST" })
       key: data.key,
       value: path,
       updated_at: new Date().toISOString(),
-      updated_by: context.userId,
+      updated_by: authData.user.id,
     });
 
     if (dbError) {

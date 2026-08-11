@@ -29,6 +29,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+function createSupabaseAdminClient() {
   const DEFAULT_SUPABASE_URL = "https://ozhuapszxxxzhabrqccs.supabase.co";
   const DEFAULT_SUPABASE_SERVICE_ROLE_KEY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96aHVhcHN6eHh4emhhYnJxY2NzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjM5NzEzNywiZXhwIjoyMTAxOTczMTM3fQ.NnMV1HjSatllv91qH8i2YOoy5R0uyaytrkZgO8bj20U";

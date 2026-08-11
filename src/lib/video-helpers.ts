@@ -13,10 +13,9 @@ export function parseVideoSource(url: string | null | undefined): VideoSource {
 
   const trimmed = url.trim();
 
-  // YouTube matchers: youtu.be, youtube.com/watch?v=, youtube.com/embed/, youtube.com/shorts/
-  const ytMatch = trimmed.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/,
-  );
+  // YouTube matchers: handles youtu.be/ID, youtube.com/watch?v=ID, youtube.com/shorts/ID, query params etc.
+  const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+  const ytMatch = trimmed.match(ytRegex);
   if (ytMatch?.[1]) {
     const videoId = ytMatch[1];
     return {
@@ -27,7 +26,8 @@ export function parseVideoSource(url: string | null | undefined): VideoSource {
   }
 
   // Vimeo matchers: vimeo.com/123456789
-  const vimeoMatch = trimmed.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/[^\/]*\/videos\/|album\/(?:\d+\/)?video\/|video\/|)(\d+)/);
+  const vimeoRegex = /(?:vimeo\.com\/)(?:channels\/(?:\w+\/)?|groups\/[^\/]*\/videos\/|album\/(?:\d+\/)?video\/|video\/|)(\d+)/i;
+  const vimeoMatch = trimmed.match(vimeoRegex);
   if (vimeoMatch?.[1]) {
     const videoId = vimeoMatch[1];
     return {

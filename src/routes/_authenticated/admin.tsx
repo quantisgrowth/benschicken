@@ -160,6 +160,33 @@ function ImagesTab() {
   } | null>(null);
   const [urlInput, setUrlInput] = useState("");
 
+  async function persistData(rows: { key: string; value: string }[]) {
+    try {
+      await save({ data: rows });
+    } catch (err) {
+      console.warn("Server save fallback to client-side supabase:", err);
+      const { data: user } = await supabase.auth.getUser();
+      const payload = rows.map((r) => ({
+        key: r.key,
+        value: r.value,
+        updated_at: new Date().toISOString(),
+        updated_by: user?.user?.id ?? null,
+      }));
+      const { error } = await supabase.from("site_content").upsert(payload);
+      if (error) throw error;
+    }
+  }
+
+  async function removeKey(key: string) {
+    try {
+      await reset({ data: { key } });
+    } catch (err) {
+      console.warn("Server reset fallback to client-side supabase:", err);
+      const { error } = await supabase.from("site_content").delete().eq("key", key);
+      if (error) throw error;
+    }
+  }
+
   async function upload(key: ImageKey, file: File) {
     if (file.size > 10 * 1024 * 1024) {
       toast.error("A imagem deve ter no máximo 10 MB.");
@@ -173,7 +200,7 @@ function ImagesTab() {
         .from("site-images")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (error) throw error;
-      await save({ data: [{ key, value: path }] });
+      await persistData([{ key, value: path }]);
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Imagem de capa atualizada.");
     } catch (err) {
@@ -196,7 +223,7 @@ function ImagesTab() {
         .from("site-images")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (error) throw error;
-      await save({ data: [{ key, value: path }] });
+      await persistData([{ key, value: path }]);
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Arquivo de vídeo enviado com sucesso.");
     } catch (err) {
@@ -210,13 +237,13 @@ function ImagesTab() {
     if (!linkModal) return;
     setBusy(linkModal.key);
     try {
-      await save({ data: [{ key: linkModal.key, value: urlInput.trim() }] });
+      await persistData([{ key: linkModal.key, value: urlInput.trim() }]);
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Link do vídeo atualizado.");
       setLinkModal(null);
       setUrlInput("");
     } catch (err) {
-      toast.error("Falha ao salvar link do vídeo.");
+      toast.error(err instanceof Error ? err.message : "Falha ao salvar link do vídeo.");
     } finally {
       setBusy(null);
     }
@@ -225,7 +252,7 @@ function ImagesTab() {
   async function removeVideo(key: TextKey) {
     setBusy(key);
     try {
-      await reset({ data: { key } });
+      await removeKey(key);
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Vídeo removido.");
     } catch {
@@ -238,7 +265,7 @@ function ImagesTab() {
   async function restore(key: ImageKey) {
     setBusy(key);
     try {
-      await reset({ data: { key } });
+      await removeKey(key);
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Imagem padrão restaurada.");
     } catch {
@@ -500,7 +527,21 @@ function TextsTab() {
     if (!values) return;
     setSaving(true);
     try {
-      await save({ data: Object.entries(values).map(([key, value]) => ({ key, value })) });
+      const rows = Object.entries(values).map(([key, value]) => ({ key, value }));
+      try {
+        await save({ data: rows });
+      } catch (serverErr) {
+        console.warn("Server save fallback to client-side supabase:", serverErr);
+        const { data: user } = await supabase.auth.getUser();
+        const payload = rows.map((r) => ({
+          key: r.key,
+          value: r.value,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.user?.id ?? null,
+        }));
+        const { error } = await supabase.from("site_content").upsert(payload);
+        if (error) throw error;
+      }
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Textos salvos com sucesso.");
     } catch (err) {

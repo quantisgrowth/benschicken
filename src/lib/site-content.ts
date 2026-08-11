@@ -175,28 +175,96 @@ export type SiteTexts = Record<TextKey, string>;
 export const IMAGE_FIELDS = [
   {
     key: "headerLogo",
+    category: "Identidade & Banners",
     label: "Logo do cabeçalho (topo do site)",
     size: "400 × 120 px (horizontal, fundo transparente PNG)",
   },
   {
     key: "footerLogo",
+    category: "Identidade & Banners",
     label: "Logo do rodapé",
     size: "400 × 120 px (horizontal, fundo transparente PNG)",
   },
   {
     key: "heroImage",
+    category: "Identidade & Banners",
     label: "Imagem do topo (hero)",
     size: "1200 × 1200 px (quadrada, 1:1)",
   },
   {
     key: "kitchenImage",
+    category: "Como Funciona",
     label: "Imagem da cozinha (Como funciona)",
     size: "1200 × 800 px (horizontal, 3:2)",
   },
   {
     key: "comboImage",
+    category: "Como Funciona",
     label: "Imagem do combo (Como funciona)",
     size: "1200 × 800 px (horizontal, 3:2)",
+  },
+  // Vitrine de Produtos
+  {
+    key: "productBucketImage",
+    category: "Vitrine de Produtos",
+    label: "Produto — Balde Crocante Ben's Chicken",
+    size: "800 × 800 px (quadrada, 1:1)",
+  },
+  {
+    key: "productBurgerImage",
+    category: "Vitrine de Produtos",
+    label: "Produto — Smash Ben's Burguer",
+    size: "800 × 800 px (quadrada, 1:1)",
+  },
+  {
+    key: "productComboImage",
+    category: "Vitrine de Produtos",
+    label: "Produto — Combo Tenders + Fritas",
+    size: "800 × 800 px (quadrada, 1:1)",
+  },
+  {
+    key: "productPackagingImage",
+    category: "Vitrine de Produtos",
+    label: "Produto — Embalagem à prova de delivery",
+    size: "800 × 800 px (quadrada, 1:1)",
+  },
+  // Depoimentos
+  {
+    key: "testimonial1Image",
+    category: "Depoimentos",
+    label: "Depoimento 1 — Carlos (Curitiba)",
+    size: "800 × 600 px (horizontal, 4:3)",
+  },
+  {
+    key: "testimonial2Image",
+    category: "Depoimentos",
+    label: "Depoimento 2 — Juliana (Campinas)",
+    size: "800 × 600 px (horizontal, 4:3)",
+  },
+  {
+    key: "testimonial3Image",
+    category: "Depoimentos",
+    label: "Depoimento 3 — Rafael (Belo Horizonte)",
+    size: "800 × 600 px (horizontal, 4:3)",
+  },
+  // Galeria Operacional
+  {
+    key: "gallery1Image",
+    category: "Galeria Operacional",
+    label: "Galeria 1 — Equipe na Cozinha",
+    size: "800 × 600 px (horizontal, 4:3)",
+  },
+  {
+    key: "gallery2Image",
+    category: "Galeria Operacional",
+    label: "Galeria 2 — Entregador / Pedidos",
+    size: "800 × 600 px (horizontal, 4:3)",
+  },
+  {
+    key: "gallery3Image",
+    category: "Galeria Operacional",
+    label: "Galeria 3 — Embalagens Prontas",
+    size: "800 × 600 px (horizontal, 4:3)",
   },
 ] as const;
 

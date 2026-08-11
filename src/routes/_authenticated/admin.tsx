@@ -184,56 +184,74 @@ function ImagesTab() {
     }
   }
 
+  const categories = Array.from(
+    new Set(IMAGE_FIELDS.map((f) => ("category" in f ? f.category : "Geral"))),
+  );
+
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
-      {IMAGE_FIELDS.map((field) => {
-        const url = content.data?.images[field.key] ?? null;
+    <div className="space-y-10">
+      {categories.map((cat) => {
+        const fields = IMAGE_FIELDS.filter(
+          (f) => ("category" in f ? f.category : "Geral") === cat,
+        );
         return (
-          <div key={field.key} className="rounded-3xl border border-border bg-card p-5">
-            <p className="text-sm font-bold">{field.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Tamanho recomendado: {field.size} · máx. 10 MB
-            </p>
-            <div className="mt-3 aspect-video overflow-hidden rounded-2xl bg-secondary">
-              {url ? (
-                <img src={url} alt={field.label} className="h-full w-full object-cover" />
-              ) : (
-                <div className="grid h-full place-items-center text-xs text-muted-foreground">
-                  Usando a imagem padrão do site
-                </div>
-              )}
+          <section key={cat}>
+            <h2 className="mb-4 text-lg font-black tracking-tight text-foreground border-b border-border/60 pb-2">
+              {cat}
+            </h2>
+            <div className="grid gap-5 sm:grid-cols-2">
+              {fields.map((field) => {
+                const url = content.data?.images[field.key] ?? null;
+                return (
+                  <div key={field.key} className="rounded-3xl border border-border bg-card p-5">
+                    <p className="text-sm font-bold">{field.label}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Tamanho recomendado: {field.size} · máx. 10 MB
+                    </p>
+                    <div className="mt-3 aspect-video overflow-hidden rounded-2xl bg-secondary">
+                      {url ? (
+                        <img src={url} alt={field.label} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="grid h-full place-items-center text-xs text-muted-foreground">
+                          Usando a imagem padrão do site
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand px-4 py-2 text-xs font-bold uppercase tracking-wide text-brand-foreground transition-colors hover:bg-brand-dark">
+                        {busy === field.key ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ImageIcon className="h-4 w-4" />
+                        )}
+                        Trocar imagem
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={busy !== null}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (file) void upload(field.key, file);
+                          }}
+                        />
+                      </label>
+                      {url && (
+                        <button
+                          onClick={() => void restore(field.key)}
+                          disabled={busy !== null}
+                          className="text-xs font-bold text-muted-foreground underline-offset-4 hover:text-brand hover:underline"
+                        >
+                          Restaurar padrão
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand px-4 py-2 text-xs font-bold uppercase tracking-wide text-brand-foreground transition-colors hover:bg-brand-dark">
-                {busy === field.key ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ImageIcon className="h-4 w-4" />
-                )}
-                Trocar imagem
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={busy !== null}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = "";
-                    if (file) void upload(field.key, file);
-                  }}
-                />
-              </label>
-              {url && (
-                <button
-                  onClick={() => void restore(field.key)}
-                  disabled={busy !== null}
-                  className="text-xs font-bold text-muted-foreground underline-offset-4 hover:text-brand hover:underline"
-                >
-                  Restaurar padrão
-                </button>
-              )}
-            </div>
-          </div>
+          </section>
         );
       })}
     </div>

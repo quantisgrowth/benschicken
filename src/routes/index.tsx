@@ -51,8 +51,8 @@ function Index() {
       <main>
         <Hero content={content} />
         <Metrics content={content} />
-        <SocialProof />
-        <ProductShowcase />
+        <SocialProof content={content} />
+        <ProductShowcase content={content} />
         <ModelCards content={content} onSelect={setInterest} />
         <HowItWorks content={content} />
         <Faq />

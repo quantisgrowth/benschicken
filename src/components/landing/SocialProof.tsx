@@ -5,6 +5,7 @@ import galleryTeam from "@/assets/gallery-team.jpg";
 import galleryDelivery from "@/assets/gallery-delivery.jpg";
 import darkKitchen from "@/assets/dark-kitchen.jpg";
 import productPackaging from "@/assets/product-packaging.jpg";
+import type { SiteContent } from "@/lib/site-content";
 
 type Testimonial = {
   id: string;
@@ -16,50 +17,63 @@ type Testimonial = {
   videoUrl: string;
 };
 
-const TESTIMONIALS: Testimonial[] = [
-  {
-    id: "carlos",
-    name: "Carlos",
-    city: "Curitiba",
-    highlight: "Cresceu 150% em 3 meses",
-    duration: "1:30",
-    thumb: galleryTeam,
-    videoUrl: "",
-  },
-  {
-    id: "juliana",
-    name: "Juliana",
-    city: "Campinas",
-    highlight: "Licenciou a cozinha em 15 dias",
-    duration: "2:05",
-    thumb: darkKitchen,
-    videoUrl: "",
-  },
-  {
-    id: "rafael",
-    name: "Rafael",
-    city: "Belo Horizonte",
-    highlight: "Payback em 11 meses",
-    duration: "1:12",
-    thumb: galleryDelivery,
-    videoUrl: "",
-  },
-];
-
-const GALLERY = [
-  { src: galleryTeam, alt: "Equipe operacional preparando pedidos na cozinha parceira", quote: "Operação enxuta, com 4 pessoas por turno." },
-  { src: galleryDelivery, alt: "Entregador retirando sacolas de pedidos da Ben's Chicken", quote: "Pico de 220 pedidos em um único fim de semana." },
-  { src: productPackaging, alt: "Embalagens de delivery da Ben's Chicken prontas para envio", quote: "Embalagem à prova de delivery, chega crocante." },
-];
-
 const TRUST = [
   { icon: Store, value: "+100", label: "Unidades ativas" },
   { icon: Truck, value: "5 Mi+", label: "Pedidos entregues" },
   { icon: Star, value: "4.8+", label: "Nota nos aplicativos de delivery" },
 ];
 
-export function SocialProof() {
+export function SocialProof({ content }: { content?: SiteContent }) {
   const [active, setActive] = useState<Testimonial | null>(null);
+  const images = content?.images;
+
+  const testimonials: Testimonial[] = [
+    {
+      id: "carlos",
+      name: "Carlos",
+      city: "Curitiba",
+      highlight: "Cresceu 150% em 3 meses",
+      duration: "1:30",
+      thumb: images?.testimonial1Image ?? galleryTeam,
+      videoUrl: "",
+    },
+    {
+      id: "juliana",
+      name: "Juliana",
+      city: "Campinas",
+      highlight: "Licenciou a cozinha em 15 dias",
+      duration: "2:05",
+      thumb: images?.testimonial2Image ?? darkKitchen,
+      videoUrl: "",
+    },
+    {
+      id: "rafael",
+      name: "Rafael",
+      city: "Belo Horizonte",
+      highlight: "Payback em 11 meses",
+      duration: "1:12",
+      thumb: images?.testimonial3Image ?? galleryDelivery,
+      videoUrl: "",
+    },
+  ];
+
+  const gallery = [
+    {
+      src: images?.gallery1Image ?? galleryTeam,
+      alt: "Equipe operacional preparando pedidos na cozinha parceira",
+      quote: "Operação enxuta, com 4 pessoas por turno.",
+    },
+    {
+      src: images?.gallery2Image ?? galleryDelivery,
+      alt: "Entregador retirando sacolas de pedidos da Ben's Chicken",
+      quote: "Pico de 220 pedidos em um único fim de semana.",
+    },
+    {
+      src: images?.gallery3Image ?? productPackaging,
+      alt: "Embalagens de delivery da Ben's Chicken prontas para envio",
+      quote: "Embalagem à prova de delivery, chega crocante.",
+    },
+  ];
 
   return (
     <section id="prova-social" className="bg-background py-20 sm:py-24">
@@ -74,7 +88,7 @@ export function SocialProof() {
         </p>
 
         <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
+          {testimonials.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -113,7 +127,7 @@ export function SocialProof() {
         </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-3">
-          {GALLERY.map((g) => (
+          {gallery.map((g) => (
             <figure
               key={g.alt}
               className="group overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
@@ -175,7 +189,6 @@ export function SocialProof() {
           </div>
         </DialogContent>
       </Dialog>
-    
     </section>
   );
 }

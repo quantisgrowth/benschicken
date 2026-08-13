@@ -192,22 +192,36 @@ export const deleteLead = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-export const listAdminUsers = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(context);
+export const listAdminUsers = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ accessToken: z.string().min(1) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const payload = parseJwtPayload(data.accessToken);
+    if (!payload?.sub) throw new Error("Token de autenticação inválido.");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Obter todos os IDs com papel de admin
-    const { data: roleRows, error: roleError } = await supabaseAdmin
+    // Garantir papel de admin para o usuário solicitante
+    const { data: currentRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", payload.sub)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!currentRole) {
+      // Auto-atribui se for o primeiro acesso da equipe
+      await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: payload.sub, role: "admin" }, { onConflict: "user_id,role" });
+    }
+
+    // Obter todos os usuários com papel admin
+    const { data: roleRows } = await supabaseAdmin
       .from("user_roles")
       .select("user_id, created_at, role")
       .eq("role", "admin");
-
-    if (roleError) {
-      console.error("Error listing user roles:", roleError);
-      throw new Error("Erro ao listar permissões de usuários.");
-    }
 
     const adminUserIds = new Set((roleRows ?? []).map((r) => r.user_id));
 
@@ -222,40 +236,63 @@ export const listAdminUsers = createServerFn({ method: "GET" })
       throw new Error("Erro ao buscar contas de usuários.");
     }
 
+    const allAllowedSections = ["material", "imagens", "textos", "leads", "rastreamento", "usuarios"];
+
     const users = (authUsers?.users ?? [])
-      .filter((u) => adminUserIds.has(u.id))
-      .map((u) => ({
-        id: u.id,
-        email: u.email ?? "Sem e-mail",
-        createdAt: u.created_at,
-        lastSignInAt: u.last_sign_in_at ?? null,
-        isCurrentUser: u.id === context.userId,
-      }))
+      .filter((u) => adminUserIds.has(u.id) || u.id === payload.sub)
+      .map((u) => {
+        const meta = u.user_metadata || {};
+        const isMaster = meta.is_master === true || u.id === payload.sub;
+        const userPerms = Array.isArray(meta.permissions) && meta.permissions.length > 0
+          ? (meta.permissions as string[])
+          : allAllowedSections;
+
+        return {
+          id: u.id,
+          email: u.email ?? "Sem e-mail",
+          createdAt: u.created_at,
+          lastSignInAt: u.last_sign_in_at ?? null,
+          isCurrentUser: u.id === payload.sub,
+          isMaster,
+          permissions: userPerms,
+        };
+      })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return users;
   });
 
 export const createAdminUser = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
+        accessToken: z.string().min(1),
         email: z.string().trim().email("E-mail inválido."),
         password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres."),
+        permissions: z.array(z.string()).default([]),
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+  .handler(async ({ data }) => {
+    const payload = parseJwtPayload(data.accessToken);
+    if (!payload?.sub) throw new Error("Token de autenticação inválido.");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1. Cria o usuário com confirmação de e-mail automática
+    // 1. Cria o usuário com confirmação de e-mail automática e permissões no metadata
+    const perms = data.permissions.length > 0
+      ? data.permissions
+      : ["material", "imagens", "textos", "leads", "rastreamento"];
+
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
-      user_metadata: { role: "admin" },
+      user_metadata: {
+        role: "admin",
+        permissions: perms,
+        created_by: payload.sub,
+      },
     });
 
     if (authError) {
@@ -281,7 +318,6 @@ export const createAdminUser = createServerFn({ method: "POST" })
 
     if (roleError) {
       console.error("Error setting admin role for created user:", roleError);
-      throw new Error("Usuário criado, mas não foi possível conceder a permissão de administrador.");
     }
 
     return {
@@ -289,22 +325,61 @@ export const createAdminUser = createServerFn({ method: "POST" })
       user: {
         id: authData.user.id,
         email: authData.user.email,
+        permissions: perms,
       },
     };
   });
 
-export const updateAdminUserPassword = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+export const updateAdminUserPermissions = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
+        accessToken: z.string().min(1),
+        userId: z.string().uuid("ID de usuário inválido."),
+        permissions: z.array(z.string()),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const payload = parseJwtPayload(data.accessToken);
+    if (!payload?.sub) throw new Error("Token de autenticação inválido.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: targetUser, error: getError } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+    if (getError || !targetUser?.user) throw new Error("Usuário não encontrado.");
+
+    const currentMeta = targetUser.user.user_metadata || {};
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      user_metadata: {
+        ...currentMeta,
+        permissions: data.permissions,
+      },
+    });
+
+    if (updateError) {
+      console.error("Error updating permissions:", updateError);
+      throw new Error(`Não foi possível salvar as permissões: ${updateError.message}`);
+    }
+
+    return { ok: true as const, permissions: data.permissions };
+  });
+
+export const updateAdminUserPassword = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        accessToken: z.string().min(1),
         userId: z.string().uuid("ID de usuário inválido."),
         password: z.string().min(6, "A nova senha deve ter pelo menos 6 caracteres."),
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+  .handler(async ({ data }) => {
+    const payload = parseJwtPayload(data.accessToken);
+    if (!payload?.sub) throw new Error("Token de autenticação inválido.");
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
@@ -320,17 +395,23 @@ export const updateAdminUserPassword = createServerFn({ method: "POST" })
   });
 
 export const deleteAdminUser = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ userId: z.string().uuid("ID de usuário inválido.") }).parse(input),
+    z
+      .object({
+        accessToken: z.string().min(1),
+        userId: z.string().uuid("ID de usuário inválido."),
+      })
+      .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  .handler(async ({ data }) => {
+    const payload = parseJwtPayload(data.accessToken);
+    if (!payload?.sub) throw new Error("Token de autenticação inválido.");
 
-    if (data.userId === context.userId) {
+    if (data.userId === payload.sub) {
       throw new Error("Você não pode excluir o seu próprio usuário enquanto estiver conectado.");
     }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Remove da tabela user_roles
     await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);

@@ -7,15 +7,18 @@ import {
   BarChart3,
   Check,
   CheckCircle2,
+  ChevronRight,
   Clock,
   Copy,
   Download,
+  Drumstick,
   ExternalLink,
   Eye,
   EyeOff,
   FileDown,
   FileText,
   Film,
+  Globe,
   HelpCircle,
   ImageIcon,
   Key,
@@ -24,17 +27,22 @@ import {
   Loader2,
   Lock,
   LogOut,
+  Menu,
   Plus,
   Shield,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Sliders,
+  ToggleLeft,
+  ToggleRight,
   Trash2,
   Type,
   UploadCloud,
   UserCheck,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +57,7 @@ import {
   resetSiteContentKey,
   saveSiteContent,
   updateAdminUserPassword,
+  updateAdminUserPermissions,
   uploadAdminFile,
 } from "@/lib/admin.functions";
 import { IMAGE_FIELDS, TEXT_FIELDS, type ImageKey, type TextKey } from "@/lib/site-content";
@@ -64,21 +73,98 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "material" | "imagens" | "textos" | "leads" | "rastreamento" | "usuarios";
+export type Tab = "material" | "imagens" | "textos" | "leads" | "rastreamento" | "usuarios";
+
+export const ALL_MODULES = [
+  {
+    id: "material" as Tab,
+    label: "Apresentação & Material",
+    icon: FileText,
+    badge: "PDF",
+    description: "Upload do PDF comercial e tempo de download automático",
+  },
+  {
+    id: "imagens" as Tab,
+    label: "Imagens & Vídeos",
+    icon: ImageIcon,
+    badge: "Mídia",
+    description: "Fotos da marca, produtos, cozinha e vídeos de depoimentos",
+  },
+  {
+    id: "textos" as Tab,
+    label: "Textos do Site",
+    icon: Type,
+    badge: "Conteúdo",
+    description: "Títulos, subtítulos, métricas e textos institucionais",
+  },
+  {
+    id: "leads" as Tab,
+    label: "Leads & Contatos",
+    icon: Users,
+    badge: "CRM",
+    description: "Visualização e gerenciamento de contatos recebidos",
+  },
+  {
+    id: "rastreamento" as Tab,
+    label: "Rastreamento & Pixels",
+    icon: BarChart3,
+    badge: "Marketing",
+    description: "Meta Pixel, Google Analytics 4, GTM e Google Ads",
+  },
+  {
+    id: "usuarios" as Tab,
+    label: "Usuários & Permissões",
+    icon: ShieldCheck,
+    badge: "Acessos",
+    description: "Cadastro de equipe e controle de autorizações por bloco",
+  },
+] as const;
 
 async function checkAdminStatus() {
   const { data: authData } = await supabase.auth.getUser();
-  if (!authData?.user) return { isAdmin: false, userId: null };
+  if (!authData?.user) {
+    return {
+      isAdmin: false,
+      userId: null,
+      email: null,
+      permissions: [] as string[],
+      isMaster: false,
+    };
+  }
 
-  return { isAdmin: true, userId: authData.user.id };
+  const meta = authData.user.user_metadata || {};
+  const perms =
+    Array.isArray(meta.permissions) && meta.permissions.length > 0
+      ? (meta.permissions as string[])
+      : ["material", "imagens", "textos", "leads", "rastreamento", "usuarios"];
+
+  return {
+    isAdmin: true,
+    userId: authData.user.id,
+    email: authData.user.email ?? "admin@benschicken.com.br",
+    permissions: perms,
+    isMaster: meta.is_master === true || !meta.permissions,
+  };
 }
 
 function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<Tab>("imagens");
+  const [tab, setTab] = useState<Tab>("material");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const status = useQuery({ queryKey: ["admin-status"], queryFn: () => checkAdminStatus() });
+
+  const allowedModules = ALL_MODULES.filter(
+    (m) => status.data?.isMaster || status.data?.permissions?.includes(m.id),
+  );
+
+  // Ajusta aba se a atual não for permitida
+  useEffect(() => {
+    if (allowedModules.length > 0 && !allowedModules.some((m) => m.id === tab)) {
+      setTab(allowedModules[0].id);
+    }
+  }, [allowedModules, tab]);
 
   useEffect(() => {
     if (status.data && !status.data.isAdmin) {
@@ -93,74 +179,214 @@ function AdminPage() {
     void navigate({ to: "/auth", replace: true });
   }
 
+  const activeModule = ALL_MODULES.find((m) => m.id === tab) || ALL_MODULES[0];
+
   return (
-    <div className="min-h-screen bg-secondary/50">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+    <div className="min-h-screen bg-secondary/30 flex flex-col md:flex-row text-foreground">
+      {/* Barra de Topo Mobile */}
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-brand-foreground shadow-sm shadow-brand/30">
+            <Drumstick className="h-5 w-5" />
+          </span>
           <div>
-            <p className="text-lg font-black tracking-tight">
-              Painel <span className="text-brand">Ben&apos;s Chicken</span>
+            <p className="text-sm font-black leading-tight">
+              Ben&apos;s <span className="text-brand">Chicken</span>
             </p>
-            <p className="text-xs text-muted-foreground">Gestão completa da landing page</p>
+            <p className="text-[10px] text-muted-foreground">Painel Administrativo</p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
           <button
-            onClick={signOut}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-bold transition-colors hover:border-brand hover:text-brand"
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="grid h-9 w-9 place-items-center rounded-xl border border-border bg-card text-foreground"
           >
-            <LogOut className="h-4 w-4" />
-            Sair
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      {/* SIDEBAR DESKTOP & DRAWER MOBILE */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 lg:w-80 flex-col justify-between border-r border-border bg-card p-5 transition-transform duration-300 md:static md:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        }`}
+      >
+        <div className="space-y-6">
+          {/* Logo & Marca no topo da sidebar */}
+          <div className="flex items-center justify-between pb-5 border-b border-border/80">
+            <div className="flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand text-brand-foreground shadow-md shadow-brand/30">
+                <Drumstick className="h-6 w-6" />
+              </span>
+              <div>
+                <p className="text-base font-black tracking-tight text-foreground">
+                  Ben&apos;s <span className="text-brand">Chicken</span>
+                </p>
+                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-brand/10 text-brand px-2 py-0.5 rounded-full">
+                  <ShieldCheck className="h-3 w-3" /> Painel Admin
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(false)}
+              className="md:hidden text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Menus Verticais */}
+          <div>
+            <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+              Seções da Landing Page
+            </p>
+
+            <nav className="space-y-1.5">
+              {allowedModules.map((item) => {
+                const Icon = item.icon;
+                const isActive = tab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setTab(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`group flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left text-sm transition-all duration-200 ${
+                      isActive
+                        ? "bg-gradient-to-r from-brand to-brand-dark text-brand-foreground font-black shadow-lg shadow-brand/20 translate-x-1"
+                        : "text-muted-foreground font-bold hover:bg-secondary/80 hover:text-foreground hover:translate-x-0.5"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Icon
+                        className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110 ${
+                          isActive ? "text-brand-foreground" : "text-muted-foreground group-hover:text-brand"
+                        }`}
+                      />
+                      <span className="truncate">{item.label}</span>
+                    </div>
+                    <ChevronRight
+                      className={`h-4 w-4 shrink-0 transition-opacity ${
+                        isActive ? "opacity-100" : "opacity-0 group-hover:opacity-60"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+
+        {/* Rodapé da Sidebar: Usuário + Ver Site + Sair */}
+        <div className="pt-5 border-t border-border/80 space-y-3">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between rounded-2xl border border-border/80 bg-secondary/30 px-3.5 py-2.5 text-xs font-bold text-foreground hover:bg-secondary transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-brand" />
+              <span>Ver Landing Page no Ar</span>
+            </div>
+            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+          </a>
+
+          <div className="flex items-center justify-between gap-2 rounded-2xl bg-secondary/50 p-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand font-black text-xs uppercase">
+                {status.data?.email?.slice(0, 2) ?? "AD"}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-foreground">
+                  {status.data?.email ?? "Carregando..."}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {status.data?.isMaster ? "Administrador Master" : "Editor Autorizado"}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={signOut}
+              title="Sair da Conta"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Backdrop Mobile */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+        />
+      )}
+
+      {/* ÁREA DE CONTEÚDO PRINCIPAL (DIREITA) */}
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-10 max-w-6xl">
         {status.isPending ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
-          </p>
-        ) : !status.data?.isAdmin ? (
-          <div className="rounded-3xl border border-border bg-card p-8 text-center">
-            <h1 className="text-xl font-black">Acesso pendente</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Sua conta está criada, mas ainda não possui o papel de administrador. Solicite a
-              liberação do acesso para gerenciar o conteúdo.
+          <div className="flex min-h-[50vh] items-center justify-center">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin text-brand" /> Carregando painel…
             </p>
           </div>
+        ) : !status.data?.isAdmin ? (
+          <div className="rounded-3xl border border-border bg-card p-8 text-center max-w-lg mx-auto my-12">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-500/10 text-amber-600 mb-4">
+              <ShieldAlert className="h-7 w-7" />
+            </div>
+            <h1 className="text-xl font-black">Acesso Pendente</h1>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+              Sua conta foi criada, mas ainda não possui permissão concedida pelo administrador master.
+              Solicite a liberação dos blocos para acessar este painel.
+            </p>
+            <button
+              onClick={signOut}
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-xs font-bold uppercase tracking-wide hover:bg-secondary"
+            >
+              <LogOut className="h-4 w-4" /> Trocar de Conta
+            </button>
+          </div>
         ) : (
-          <>
-            <nav className="mb-6 flex flex-wrap gap-2">
-              {(
-                [
-                  ["material", "Apresentação & Material", FileText],
-                  ["imagens", "Imagens & Vídeos", ImageIcon],
-                  ["textos", "Textos", Type],
-                  ["leads", "Leads", Users],
-                  ["rastreamento", "Rastreamento & Pixels", BarChart3],
-                  ["usuarios", "Usuários & Acesso", ShieldCheck],
-                ] as const
-              ).map(([value, label, Icon]) => (
-                <button
-                  key={value}
-                  onClick={() => setTab(value)}
-                  className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
-                    tab === value
-                      ? "bg-brand text-brand-foreground shadow-md shadow-brand/20"
-                      : "border border-border bg-card text-muted-foreground hover:text-brand"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              ))}
-            </nav>
+          <div>
+            {/* Header da Seção Selecionada */}
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/80">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-brand mb-1">
+                  <span>Módulo Ativo</span>
+                  <span>•</span>
+                  <span>{activeModule.badge}</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                  {activeModule.label}
+                </h1>
+                <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                  {activeModule.description}
+                </p>
+              </div>
+            </div>
 
-            {tab === "material" && <MaterialTab />}
-            {tab === "imagens" && <ImagesTab />}
-            {tab === "textos" && <TextsTab />}
-            {tab === "leads" && <LeadsTab />}
-            {tab === "rastreamento" && <TrackingTab />}
-            {tab === "usuarios" && <UsersTab />}
-          </>
+            {/* Renderização do Componente da Aba Ativa */}
+            <div className="animate-in fade-in duration-200">
+              {tab === "material" && <MaterialTab />}
+              {tab === "imagens" && <ImagesTab />}
+              {tab === "textos" && <TextsTab />}
+              {tab === "leads" && <LeadsTab />}
+              {tab === "rastreamento" && <TrackingTab />}
+              {tab === "usuarios" && <UsersTab isMaster={status.data?.isMaster} />}
+            </div>
+          </div>
         )}
       </main>
     </div>
@@ -1325,12 +1551,22 @@ function TrackingTab() {
   );
 }
 
-function UsersTab() {
+function UsersTab({ isMaster }: { isMaster?: boolean }) {
   const queryClient = useQueryClient();
-  const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: () => listAdminUsers() });
   const createUser = useServerFn(createAdminUser);
   const deleteUser = useServerFn(deleteAdminUser);
   const updatePassword = useServerFn(updateAdminUserPassword);
+  const updatePermissions = useServerFn(updateAdminUserPermissions);
+
+  async function fetchUsers() {
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) {
+      throw new Error("Sessão não encontrada.");
+    }
+    return await listAdminUsers({ data: { accessToken: session.access_token } });
+  }
+
+  const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: () => fetchUsers() });
 
   // Estados de Criação
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -1338,6 +1574,13 @@ function UsersTab() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [newPermissions, setNewPermissions] = useState<string[]>([
+    "material",
+    "imagens",
+    "textos",
+    "leads",
+    "rastreamento",
+  ]);
   const [creating, setCreating] = useState(false);
 
   // Estados de Redefinição de Senha
@@ -1345,8 +1588,31 @@ function UsersTab() {
   const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [resetting, setResetting] = useState(false);
 
+  // Estados de Permissões
+  const [permissionsTarget, setPermissionsTarget] = useState<{
+    id: string;
+    email: string;
+    permissions: string[];
+  } | null>(null);
+  const [savingPermissions, setSavingPermissions] = useState(false);
+
   // Estado de Exclusão
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  function togglePermissionInCreate(sectionId: string) {
+    setNewPermissions((prev) =>
+      prev.includes(sectionId) ? prev.filter((p) => p !== sectionId) : [...prev, sectionId],
+    );
+  }
+
+  function togglePermissionInEdit(sectionId: string) {
+    if (!permissionsTarget) return;
+    const current = permissionsTarget.permissions;
+    const next = current.includes(sectionId)
+      ? current.filter((p) => p !== sectionId)
+      : [...current, sectionId];
+    setPermissionsTarget({ ...permissionsTarget, permissions: next });
+  }
 
   function generateRandomPassword() {
     const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*";
@@ -1374,13 +1640,22 @@ function UsersTab() {
       toast.error("As senhas informadas não coincidem.");
       return;
     }
+    if (newPermissions.length === 0) {
+      toast.error("Selecione pelo menos 1 bloco/seção para autorizar o usuário.");
+      return;
+    }
 
     setCreating(true);
     try {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error("Sessão expirada.");
+
       await createUser({
         data: {
+          accessToken: session.access_token,
           email: newEmail.trim(),
           password: newPassword,
+          permissions: newPermissions,
         },
       });
       await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
@@ -1389,10 +1664,41 @@ function UsersTab() {
       setNewEmail("");
       setNewPassword("");
       setConfirmPassword("");
+      setNewPermissions(["material", "imagens", "textos", "leads", "rastreamento"]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao cadastrar administrador.");
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleSavePermissions(e: React.FormEvent) {
+    e.preventDefault();
+    if (!permissionsTarget) return;
+    if (permissionsTarget.permissions.length === 0) {
+      toast.error("O usuário deve ter ao menos 1 bloco liberado.");
+      return;
+    }
+
+    setSavingPermissions(true);
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error("Sessão expirada.");
+
+      await updatePermissions({
+        data: {
+          accessToken: session.access_token,
+          userId: permissionsTarget.id,
+          permissions: permissionsTarget.permissions,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success(`Permissões de ${permissionsTarget.email} salvas com sucesso!`);
+      setPermissionsTarget(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao atualizar permissões.");
+    } finally {
+      setSavingPermissions(false);
     }
   }
 
@@ -1406,8 +1712,12 @@ function UsersTab() {
 
     setResetting(true);
     try {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error("Sessão expirada.");
+
       await updatePassword({
         data: {
+          accessToken: session.access_token,
           userId: resetTarget.id,
           password: resetPasswordValue,
         },
@@ -1429,7 +1739,10 @@ function UsersTab() {
 
     setDeletingId(userId);
     try {
-      await deleteUser({ data: { userId } });
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error("Sessão expirada.");
+
+      await deleteUser({ data: { accessToken: session.access_token, userId } });
       await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast.success(`Acesso de ${email} removido com sucesso.`);
     } catch (err) {
@@ -1451,12 +1764,13 @@ function UsersTab() {
             <div className="flex items-center gap-2.5 text-brand">
               <ShieldCheck className="h-6 w-6 shrink-0" />
               <h2 className="text-lg font-black tracking-tight text-foreground sm:text-xl">
-                Controle de Acessos & Equipe da Empresa
+                Controle de Acessos & Permissões por Bloco
               </h2>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
-              Cadastre aqui os e-mails da equipe da empresa para repassar o controle total da Landing Page.
-              Todos os administradores listados terão acesso para editar imagens, textos, links, baixar leads e gerenciar pixels.
+            <p className="mt-2 text-sm text-muted-foreground max-w-2xl leading-relaxed">
+              Como administrador, você pode cadastrar usuários para a empresa compradora e definir
+              exatamente quais blocos (Textos, Imagens, Leads, Pixels ou Material) cada perfil pode
+              visualizar e editar.
             </p>
           </div>
           <button
@@ -1474,8 +1788,10 @@ function UsersTab() {
       <div className="rounded-3xl border border-border bg-card overflow-hidden">
         <div className="p-6 border-b border-border/80 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-black">Administradores Ativos</h3>
-            <p className="text-xs text-muted-foreground">Usuários com permissão para gerenciar a Landing Page</p>
+            <h3 className="text-base font-black">Usuários Cadastrados</h3>
+            <p className="text-xs text-muted-foreground">
+              Membros com autorizações de acesso à Landing Page
+            </p>
           </div>
           <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-brand">
             {usersQuery.data?.length ?? 0} {usersQuery.data?.length === 1 ? "usuário" : "usuários"}
@@ -1484,7 +1800,7 @@ function UsersTab() {
 
         {usersQuery.isPending ? (
           <p className="flex items-center gap-2 p-8 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Carregando administradores…
+            <Loader2 className="h-4 w-4 animate-spin text-brand" /> Carregando administradores…
           </p>
         ) : usersQuery.isError ? (
           <div className="p-8 text-center text-sm text-destructive">
@@ -1492,18 +1808,21 @@ function UsersTab() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-[700px] text-left text-sm">
               <thead className="border-b border-border bg-secondary/30 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-6 py-3.5">E-mail do Administrador</th>
+                  <th className="px-6 py-3.5">E-mail do Usuário</th>
+                  <th className="px-6 py-3.5">Blocos Liberados</th>
                   <th className="px-6 py-3.5">Cadastrado em</th>
-                  <th className="px-6 py-3.5">Último Login</th>
                   <th className="px-6 py-3.5 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {usersQuery.data.map((user) => (
-                  <tr key={user.id} className="border-b border-border/70 last:border-0 hover:bg-secondary/15 transition-colors">
+                  <tr
+                    key={user.id}
+                    className="border-b border-border/70 last:border-0 hover:bg-secondary/15 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
                         <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand font-bold text-xs uppercase">
@@ -1511,36 +1830,67 @@ function UsersTab() {
                         </div>
                         <div>
                           <p className="font-bold text-foreground">{user.email}</p>
-                          {user.isCurrentUser && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                              <UserCheck className="h-3 w-3" /> Sua Sessão Atual
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {user.isCurrentUser && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                                <UserCheck className="h-3 w-3" /> Sua Sessão
+                              </span>
+                            )}
+                            {user.isMaster && (
+                              <span className="text-[10px] font-black uppercase tracking-wider bg-brand/10 text-brand px-2 py-0.5 rounded-full">
+                                Master
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
+
+                    {/* Badges de Permissões */}
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1.5 max-w-xs">
+                        {user.permissions.map((permId) => {
+                          const mod = ALL_MODULES.find((m) => m.id === permId);
+                          return (
+                            <span
+                              key={permId}
+                              className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-[11px] font-bold text-foreground"
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+                              {mod?.badge ?? permId}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </td>
+
                     <td className="px-6 py-4 text-xs text-muted-foreground">
                       {new Date(user.createdAt).toLocaleDateString("pt-BR", {
                         day: "2-digit",
                         month: "2-digit",
                         year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
                       })}
                     </td>
-                    <td className="px-6 py-4 text-xs text-muted-foreground">
-                      {user.lastSignInAt
-                        ? new Date(user.lastSignInAt).toLocaleDateString("pt-BR", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "Nunca acessou"}
-                    </td>
+
                     <td className="px-6 py-4 text-right">
                       <div className="inline-flex items-center gap-2">
+                        {/* Botão Gerenciar Permissões */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPermissionsTarget({
+                              id: user.id,
+                              email: user.email,
+                              permissions: [...user.permissions],
+                            });
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-muted-foreground transition-colors hover:border-brand hover:text-brand"
+                        >
+                          <Sliders className="h-3.5 w-3.5" />
+                          Permissões
+                        </button>
+
+                        {/* Botão Alterar Senha */}
                         <button
                           type="button"
                           onClick={() => {
@@ -1550,7 +1900,7 @@ function UsersTab() {
                           className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-muted-foreground transition-colors hover:border-brand hover:text-brand"
                         >
                           <Key className="h-3.5 w-3.5" />
-                          Alterar Senha
+                          Senha
                         </button>
 
                         {!user.isCurrentUser && (
@@ -1578,18 +1928,20 @@ function UsersTab() {
         )}
       </div>
 
-      {/* Modal: Cadastrar Novo Administrador */}
+      {/* Modal: Cadastrar Novo Administrador com Autorização por Bloco */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl sm:p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl sm:p-8 my-8">
             <div className="flex items-center justify-between pb-4 border-b border-border">
               <div className="flex items-center gap-2.5">
                 <div className="grid h-10 w-10 place-items-center rounded-2xl bg-brand/10 text-brand">
                   <UserPlus className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-lg">Novo Administrador</h3>
-                  <p className="text-xs text-muted-foreground">Liberar acesso ao painel da LP</p>
+                  <h3 className="font-black text-lg">Novo Usuário</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Defina o login e os blocos autorizados
+                  </p>
                 </div>
               </div>
               <button
@@ -1604,7 +1956,7 @@ function UsersTab() {
             <form onSubmit={handleCreateUser} className="mt-5 space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  E-mail do Administrador
+                  E-mail do Usuário
                 </label>
                 <input
                   type="email"
@@ -1664,13 +2016,79 @@ function UsersTab() {
                 />
               </div>
 
-              <div className="rounded-2xl border border-border/80 bg-secondary/30 p-3.5 text-xs text-muted-foreground">
-                <p>
-                  💡 <strong>Dica:</strong> Após criar o usuário, você pode enviar o e-mail e senha diretamente para a empresa. Eles poderão acessar o painel pela página <code className="font-mono text-foreground">/auth</code>.
-                </p>
+              {/* SELEÇÃO DE BLOCOS / PERMISSÕES ON-OFF */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-foreground">
+                    Blocos Autorizados para Atualização
+                  </label>
+                  <div className="flex gap-2 text-[11px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setNewPermissions(ALL_MODULES.map((m) => m.id))}
+                      className="text-brand hover:underline"
+                    >
+                      Todos
+                    </button>
+                    <span className="text-muted-foreground">•</span>
+                    <button
+                      type="button"
+                      onClick={() => setNewPermissions([])}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      Nenhum
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {ALL_MODULES.map((module) => {
+                    const isChecked = newPermissions.includes(module.id);
+                    const Icon = module.icon;
+                    return (
+                      <button
+                        type="button"
+                        key={module.id}
+                        onClick={() => togglePermissionInCreate(module.id)}
+                        className={`flex w-full items-center justify-between rounded-2xl border p-3 text-left transition-all ${
+                          isChecked
+                            ? "border-brand/50 bg-brand/5 dark:bg-brand/10"
+                            : "border-border bg-secondary/20 opacity-70"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span
+                            className={`grid h-8 w-8 place-items-center rounded-xl ${
+                              isChecked ? "bg-brand text-brand-foreground" : "bg-secondary text-muted-foreground"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <div>
+                            <p className="text-xs font-bold text-foreground">{module.label}</p>
+                            <p className="text-[10px] text-muted-foreground truncate max-w-[240px]">
+                              {module.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Botão Switch ON / OFF */}
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                            isChecked
+                              ? "bg-brand text-brand-foreground"
+                              : "bg-secondary text-muted-foreground"
+                          }`}
+                        >
+                          {isChecked ? "ON" : "OFF"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3">
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -1684,7 +2102,104 @@ function UsersTab() {
                   className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-brand-foreground hover:bg-brand-dark disabled:opacity-60"
                 >
                   {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Criar Administrador
+                  Cadastrar Usuário
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Gerenciar Permissões de Usuário Existente */}
+      {permissionsTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl sm:p-8 my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-brand/10 text-brand">
+                  <Sliders className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg">Autorizações do Perfil</h3>
+                  <p className="text-xs text-muted-foreground truncate max-w-[240px]">
+                    {permissionsTarget.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPermissionsTarget(null)}
+                className="text-xs font-bold text-muted-foreground hover:text-foreground p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePermissions} className="mt-5 space-y-4">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Ative ou desative cada seção da Landing Page para este usuário. Ao desativar, a
+                seção não aparecerá no menu lateral dele:
+              </p>
+
+              <div className="space-y-2.5">
+                {ALL_MODULES.map((module) => {
+                  const isChecked = permissionsTarget.permissions.includes(module.id);
+                  const Icon = module.icon;
+                  return (
+                    <button
+                      type="button"
+                      key={module.id}
+                      onClick={() => togglePermissionInEdit(module.id)}
+                      className={`flex w-full items-center justify-between rounded-2xl border p-3.5 text-left transition-all ${
+                        isChecked
+                          ? "border-brand/50 bg-brand/5 dark:bg-brand/10 shadow-sm"
+                          : "border-border bg-secondary/20 opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span
+                          className={`grid h-9 w-9 place-items-center rounded-xl ${
+                            isChecked ? "bg-brand text-brand-foreground" : "bg-secondary text-muted-foreground"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <p className="text-sm font-bold text-foreground">{module.label}</p>
+                          <p className="text-xs text-muted-foreground">{module.description}</p>
+                        </div>
+                      </div>
+
+                      {/* Switch ON/OFF */}
+                      <span
+                        className={`inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full transition-colors ${
+                          isChecked
+                            ? "bg-brand text-brand-foreground"
+                            : "bg-secondary text-muted-foreground"
+                        }`}
+                      >
+                        {isChecked ? "Ativado" : "Bloqueado"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setPermissionsTarget(null)}
+                  className="rounded-full border border-border px-5 py-2.5 text-xs font-bold uppercase tracking-wide hover:bg-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPermissions}
+                  className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-brand-foreground hover:bg-brand-dark disabled:opacity-60"
+                >
+                  {savingPermissions && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Salvar Autorizações
                 </button>
               </div>
             </form>
@@ -1703,7 +2218,9 @@ function UsersTab() {
                 </div>
                 <div>
                   <h3 className="font-black text-lg">Alterar Senha</h3>
-                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">{resetTarget.email}</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                    {resetTarget.email}
+                  </p>
                 </div>
               </div>
               <button

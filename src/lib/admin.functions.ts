@@ -191,3 +191,157 @@ export const deleteLead = createServerFn({ method: "POST" })
     if (error) throw new Error("Não foi possível excluir o lead.");
     return { ok: true as const };
   });
+
+export const listAdminUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Obter todos os IDs com papel de admin
+    const { data: roleRows, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id, created_at, role")
+      .eq("role", "admin");
+
+    if (roleError) {
+      console.error("Error listing user roles:", roleError);
+      throw new Error("Erro ao listar permissões de usuários.");
+    }
+
+    const adminUserIds = new Set((roleRows ?? []).map((r) => r.user_id));
+
+    // Obter dados da tabela auth.users via Supabase Admin API
+    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+
+    if (authError) {
+      console.error("Error listing auth users:", authError);
+      throw new Error("Erro ao buscar contas de usuários.");
+    }
+
+    const users = (authUsers?.users ?? [])
+      .filter((u) => adminUserIds.has(u.id))
+      .map((u) => ({
+        id: u.id,
+        email: u.email ?? "Sem e-mail",
+        createdAt: u.created_at,
+        lastSignInAt: u.last_sign_in_at ?? null,
+        isCurrentUser: u.id === context.userId,
+      }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return users;
+  });
+
+export const createAdminUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        email: z.string().trim().email("E-mail inválido."),
+        password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres."),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 1. Cria o usuário com confirmação de e-mail automática
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { role: "admin" },
+    });
+
+    if (authError) {
+      console.error("Error creating user:", authError);
+      if (authError.message.includes("already registered") || authError.message.includes("already been registered")) {
+        throw new Error("Este e-mail já está cadastrado no sistema.");
+      }
+      throw new Error(`Não foi possível criar o usuário: ${authError.message}`);
+    }
+
+    if (!authData?.user) {
+      throw new Error("Erro inesperado ao criar o usuário.");
+    }
+
+    // 2. Garante o papel de admin na tabela user_roles
+    const { error: roleError } = await supabaseAdmin.from("user_roles").upsert(
+      {
+        user_id: authData.user.id,
+        role: "admin",
+      },
+      { onConflict: "user_id,role" },
+    );
+
+    if (roleError) {
+      console.error("Error setting admin role for created user:", roleError);
+      throw new Error("Usuário criado, mas não foi possível conceder a permissão de administrador.");
+    }
+
+    return {
+      ok: true as const,
+      user: {
+        id: authData.user.id,
+        email: authData.user.email,
+      },
+    };
+  });
+
+export const updateAdminUserPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid("ID de usuário inválido."),
+        password: z.string().min(6, "A nova senha deve ter pelo menos 6 caracteres."),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      password: data.password,
+    });
+
+    if (error) {
+      console.error("Error updating user password:", error);
+      throw new Error(`Não foi possível alterar a senha: ${error.message}`);
+    }
+
+    return { ok: true as const };
+  });
+
+export const deleteAdminUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ userId: z.string().uuid("ID de usuário inválido.") }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (data.userId === context.userId) {
+      throw new Error("Você não pode excluir o seu próprio usuário enquanto estiver conectado.");
+    }
+
+    // 1. Remove da tabela user_roles
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
+
+    // 2. Remove do auth
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (authError) {
+      console.error("Error deleting user from auth:", authError);
+      throw new Error(`Não foi possível excluir o usuário: ${authError.message}`);
+    }
+
+    return { ok: true as const };
+  });
+

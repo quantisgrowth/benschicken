@@ -3,31 +3,52 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import {
+  Activity,
+  BarChart3,
+  Check,
   CheckCircle2,
   Clock,
+  Copy,
   Download,
   ExternalLink,
+  Eye,
+  EyeOff,
   FileDown,
   FileText,
   Film,
+  HelpCircle,
   ImageIcon,
+  Key,
+  KeyRound,
   Link2,
   Loader2,
+  Lock,
   LogOut,
+  Plus,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
   Trash2,
   Type,
   UploadCloud,
+  UserCheck,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getSiteContent } from "@/lib/content.functions";
 import {
+  createAdminUser,
+  deleteAdminUser,
   deleteLead,
   getAdminStatus,
+  listAdminUsers,
   listLeads,
   resetSiteContentKey,
   saveSiteContent,
+  updateAdminUserPassword,
   uploadAdminFile,
 } from "@/lib/admin.functions";
 import { IMAGE_FIELDS, TEXT_FIELDS, type ImageKey, type TextKey } from "@/lib/site-content";
@@ -36,14 +57,14 @@ export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Painel administrativo | Ben's Chicken" },
-      { name: "description", content: "Gerencie imagens, textos, apresentação e leads da landing page." },
+      { name: "description", content: "Gerencie imagens, textos, apresentação, rastreamento, usuários e leads da landing page." },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: AdminPage,
 });
 
-type Tab = "material" | "imagens" | "textos" | "leads";
+type Tab = "material" | "imagens" | "textos" | "leads" | "rastreamento" | "usuarios";
 
 async function checkAdminStatus() {
   const { data: authData } = await supabase.auth.getUser();
@@ -80,7 +101,7 @@ function AdminPage() {
             <p className="text-lg font-black tracking-tight">
               Painel <span className="text-brand">Ben&apos;s Chicken</span>
             </p>
-            <p className="text-xs text-muted-foreground">Conteúdo da landing page</p>
+            <p className="text-xs text-muted-foreground">Gestão completa da landing page</p>
           </div>
           <button
             onClick={signOut}
@@ -114,6 +135,8 @@ function AdminPage() {
                   ["imagens", "Imagens & Vídeos", ImageIcon],
                   ["textos", "Textos", Type],
                   ["leads", "Leads", Users],
+                  ["rastreamento", "Rastreamento & Pixels", BarChart3],
+                  ["usuarios", "Usuários & Acesso", ShieldCheck],
                 ] as const
               ).map(([value, label, Icon]) => (
                 <button
@@ -121,7 +144,7 @@ function AdminPage() {
                   onClick={() => setTab(value)}
                   className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors ${
                     tab === value
-                      ? "bg-brand text-brand-foreground"
+                      ? "bg-brand text-brand-foreground shadow-md shadow-brand/20"
                       : "border border-border bg-card text-muted-foreground hover:text-brand"
                   }`}
                 >
@@ -135,6 +158,8 @@ function AdminPage() {
             {tab === "imagens" && <ImagesTab />}
             {tab === "textos" && <TextsTab />}
             {tab === "leads" && <LeadsTab />}
+            {tab === "rastreamento" && <TrackingTab />}
+            {tab === "usuarios" && <UsersTab />}
           </>
         )}
       </main>
@@ -865,14 +890,21 @@ function TextsTab() {
   const inputClass =
     "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25";
 
+  const EXCLUDED_FROM_TEXTS = new Set([
+    "presentationFile",
+    "presentationAutoDownloadSeconds",
+    "metaPixelId",
+    "googleAnalyticsId",
+    "googleTagManagerId",
+    "googleAdsId",
+    "googleAdsConversionLabel",
+    "customHeadScripts",
+  ]);
+
   return (
     <div className="rounded-3xl border border-border bg-card p-6">
       <div className="grid gap-5 sm:grid-cols-2">
-        {TEXT_FIELDS.filter(
-          (field) =>
-            field.key !== "presentationFile" &&
-            field.key !== "presentationAutoDownloadSeconds",
-        ).map((field) => (
+        {TEXT_FIELDS.filter((field) => !EXCLUDED_FROM_TEXTS.has(field.key)).map((field) => (
           <div key={field.key} className={field.multiline ? "sm:col-span-2" : ""}>
             <label htmlFor={field.key} className="mb-2 block text-sm font-bold">
               {field.label}
@@ -1033,6 +1065,693 @@ function LeadsTab() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function TrackingTab() {
+  const content = useContent();
+  const queryClient = useQueryClient();
+  const save = useServerFn(saveSiteContent);
+
+  const [metaPixelId, setMetaPixelId] = useState("");
+  const [googleAnalyticsId, setGoogleAnalyticsId] = useState("");
+  const [googleTagManagerId, setGoogleTagManagerId] = useState("");
+  const [googleAdsId, setGoogleAdsId] = useState("");
+  const [googleAdsConversionLabel, setGoogleAdsConversionLabel] = useState("");
+  const [customHeadScripts, setCustomHeadScripts] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (content.data?.texts) {
+      setMetaPixelId(content.data.texts.metaPixelId ?? "");
+      setGoogleAnalyticsId(content.data.texts.googleAnalyticsId ?? "");
+      setGoogleTagManagerId(content.data.texts.googleTagManagerId ?? "");
+      setGoogleAdsId(content.data.texts.googleAdsId ?? "");
+      setGoogleAdsConversionLabel(content.data.texts.googleAdsConversionLabel ?? "");
+      setCustomHeadScripts(content.data.texts.customHeadScripts ?? "");
+    }
+  }, [content.data]);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const rows = [
+        { key: "metaPixelId", value: metaPixelId.trim() },
+        { key: "googleAnalyticsId", value: googleAnalyticsId.trim() },
+        { key: "googleTagManagerId", value: googleTagManagerId.trim() },
+        { key: "googleAdsId", value: googleAdsId.trim() },
+        { key: "googleAdsConversionLabel", value: googleAdsConversionLabel.trim() },
+        { key: "customHeadScripts", value: customHeadScripts.trim() },
+      ];
+
+      try {
+        await save({ data: rows });
+      } catch (serverErr) {
+        console.warn("Server save fallback to client supabase:", serverErr);
+        const { data: user } = await supabase.auth.getUser();
+        const payload = rows.map((r) => ({
+          key: r.key,
+          value: r.value,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.user?.id ?? null,
+        }));
+        const { error } = await supabase.from("site_content").upsert(payload);
+        if (error) throw error;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["site-content"] });
+      toast.success("Configurações de rastreamento salvas com sucesso!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao salvar tags de rastreamento.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputClass =
+    "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25";
+
+  return (
+    <div className="space-y-6">
+      {/* Banner de Rastreamento Automático */}
+      <div className="rounded-3xl border border-brand/30 bg-brand/5 p-6 dark:bg-brand/10 sm:p-8">
+        <div className="flex items-center gap-3 text-brand">
+          <Sparkles className="h-6 w-6 shrink-0" />
+          <h2 className="text-lg font-black tracking-tight text-foreground sm:text-xl">
+            Rastreamento Inteligente de Conversões
+          </h2>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Basta preencher os identificadores abaixo. Todos os pontos de contato da Landing Page já
+          possuem disparos automáticos configurados para Meta, Google Analytics 4, GTM e Google Ads:
+        </p>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-xs">
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+            <span className="font-bold text-foreground block mb-1">🎯 Formulário de Lead</span>
+            <p className="text-muted-foreground">
+              Dispara evento <strong className="text-brand">Lead</strong> (Meta),{" "}
+              <strong className="text-brand">generate_lead</strong> (GA4) e conversão do Google Ads com dados de interesse e investimento.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+            <span className="font-bold text-foreground block mb-1">💬 Cliques no WhatsApp</span>
+            <p className="text-muted-foreground">
+              Dispara evento <strong className="text-brand">Contact</strong> identificando de qual botão ou área da página partiu o clique (Hero, Barra Mobile, Rodapé).
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+            <span className="font-bold text-foreground block mb-1">📄 Download da Apresentação</span>
+            <p className="text-muted-foreground">
+              Dispara eventos <strong className="text-brand">DownloadPresentation</strong> e <strong className="text-brand">ViewContent</strong> (Meta) e <strong className="text-brand">file_download</strong> (GA4).
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+            <span className="font-bold text-foreground block mb-1">🏬 Modelos de Negócio</span>
+            <p className="text-muted-foreground">
+              Dispara evento <strong className="text-brand">SelectBusinessModel</strong> marcando o interesse em Franquia ou Licenciamento.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+            <span className="font-bold text-foreground block mb-1">🎥 Depoimentos em Vídeo</span>
+            <p className="text-muted-foreground">
+              Dispara evento <strong className="text-brand">WatchTestimonial</strong> e <strong className="text-brand">video_start</strong> ao assistir histórias reais.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+            <span className="font-bold text-foreground block mb-1">⚡ Início de Cadastro</span>
+            <p className="text-muted-foreground">
+              Dispara <strong className="text-brand">InitiateCheckout</strong> no primeiro toque no formulário para mensurar taxa de abandono.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Formulário de IDs */}
+      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8">
+        <h3 className="text-base font-bold uppercase tracking-wider text-muted-foreground mb-6">
+          Identificadores de Rastreamento
+        </h3>
+
+        <div className="grid gap-6 sm:grid-cols-2">
+          {/* Meta Pixel */}
+          <div className="rounded-2xl border border-border/70 p-5 bg-secondary/20">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="metaPixelId" className="block text-sm font-bold">
+                Meta Pixel ID (Facebook / Instagram)
+              </label>
+              <span className="text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">
+                Meta Ads
+              </span>
+            </div>
+            <input
+              id="metaPixelId"
+              value={metaPixelId}
+              onChange={(e) => setMetaPixelId(e.target.value)}
+              placeholder="Ex: 123456789012345"
+              className={inputClass}
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Encontre no Gerenciador de Eventos da Meta &gt; Configurações do Pixel &gt; ID do Conjunto de Dados.
+            </p>
+          </div>
+
+          {/* Google Analytics 4 */}
+          <div className="rounded-2xl border border-border/70 p-5 bg-secondary/20">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="googleAnalyticsId" className="block text-sm font-bold">
+                Google Analytics 4 (ID da Métrica)
+              </label>
+              <span className="text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                GA4
+              </span>
+            </div>
+            <input
+              id="googleAnalyticsId"
+              value={googleAnalyticsId}
+              onChange={(e) => setGoogleAnalyticsId(e.target.value)}
+              placeholder="Ex: G-XXXXXXXXXX"
+              className={inputClass}
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Encontre em Admin do Google Analytics &gt; Fluxos de Dados &gt; ID da Métrica (inicia com &apos;G-&apos;).
+            </p>
+          </div>
+
+          {/* Google Tag Manager */}
+          <div className="rounded-2xl border border-border/70 p-5 bg-secondary/20">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="googleTagManagerId" className="block text-sm font-bold">
+                Google Tag Manager (ID do Contêiner)
+              </label>
+              <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                GTM
+              </span>
+            </div>
+            <input
+              id="googleTagManagerId"
+              value={googleTagManagerId}
+              onChange={(e) => setGoogleTagManagerId(e.target.value)}
+              placeholder="Ex: GTM-XXXXXXX"
+              className={inputClass}
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Opcional. Se preenchido, injeta o contêiner GTM e alimenta a camada de dados (<code className="text-foreground font-mono">dataLayer</code>).
+            </p>
+          </div>
+
+          {/* Google Ads */}
+          <div className="rounded-2xl border border-border/70 p-5 bg-secondary/20">
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="googleAdsId" className="block text-sm font-bold">
+                Google Ads (ID de Conversão)
+              </label>
+              <span className="text-[10px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full">
+                Google Ads
+              </span>
+            </div>
+            <input
+              id="googleAdsId"
+              value={googleAdsId}
+              onChange={(e) => setGoogleAdsId(e.target.value)}
+              placeholder="Ex: AW-XXXXXXXXXX"
+              className={inputClass}
+            />
+            <div className="mt-3">
+              <label htmlFor="googleAdsConversionLabel" className="block text-xs font-bold text-muted-foreground mb-1">
+                Rótulo de Conversão do Lead (Conversion Label)
+              </label>
+              <input
+                id="googleAdsConversionLabel"
+                value={googleAdsConversionLabel}
+                onChange={(e) => setGoogleAdsConversionLabel(e.target.value)}
+                placeholder="Ex: AbCdEfGhIjKlMnOpQrS"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* Custom Head Scripts */}
+          <div className="sm:col-span-2 rounded-2xl border border-border/70 p-5 bg-secondary/20">
+            <label htmlFor="customHeadScripts" className="block text-sm font-bold mb-1">
+              Scripts Personalizados adicionais no &lt;head&gt;
+            </label>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Insira tags completas (ex: <code className="font-mono text-foreground">&lt;script&gt;...&lt;/script&gt;</code>) de outras ferramentas como TikTok Pixel, Hotjar, Microsoft Clarity, etc.
+            </p>
+            <textarea
+              id="customHeadScripts"
+              rows={4}
+              value={customHeadScripts}
+              onChange={(e) => setCustomHeadScripts(e.target.value)}
+              placeholder="<!-- Exemplo de script adicional -->&#10;<script>...</script>"
+              className={`${inputClass} font-mono text-xs`}
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={saving}
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3.5 text-sm font-bold uppercase tracking-wider text-brand-foreground transition-all hover:bg-brand-dark hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60"
+        >
+          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+          Salvar Tags de Rastreamento
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function UsersTab() {
+  const queryClient = useQueryClient();
+  const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: () => listAdminUsers() });
+  const createUser = useServerFn(createAdminUser);
+  const deleteUser = useServerFn(deleteAdminUser);
+  const updatePassword = useServerFn(updateAdminUserPassword);
+
+  // Estados de Criação
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  // Estados de Redefinição de Senha
+  const [resetTarget, setResetTarget] = useState<{ id: string; email: string } | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [resetting, setResetting] = useState(false);
+
+  // Estado de Exclusão
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  function generateRandomPassword() {
+    const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*";
+    let pwd = "";
+    for (let i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewPassword(pwd);
+    setConfirmPassword(pwd);
+    setShowPassword(true);
+    toast.info("Senha segura gerada!");
+  }
+
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newEmail.trim() || !newPassword) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas informadas não coincidem.");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      await createUser({
+        data: {
+          email: newEmail.trim(),
+          password: newPassword,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success(`Administrador ${newEmail} cadastrado com sucesso!`);
+      setShowCreateModal(false);
+      setNewEmail("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao cadastrar administrador.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetTarget) return;
+    if (resetPasswordValue.length < 6) {
+      toast.error("A nova senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+
+    setResetting(true);
+    try {
+      await updatePassword({
+        data: {
+          userId: resetTarget.id,
+          password: resetPasswordValue,
+        },
+      });
+      toast.success(`Senha do usuário ${resetTarget.email} atualizada com sucesso!`);
+      setResetTarget(null);
+      setResetPasswordValue("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao alterar a senha.");
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  async function handleDeleteUser(userId: string, email: string) {
+    if (!window.confirm(`Tem certeza que deseja remover o acesso do administrador ${email}?`)) {
+      return;
+    }
+
+    setDeletingId(userId);
+    try {
+      await deleteUser({ data: { userId } });
+      await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success(`Acesso de ${email} removido com sucesso.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir administrador.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  const inputClass =
+    "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25";
+
+  return (
+    <div className="space-y-6">
+      {/* Banner explicativo de Venda e Gestão da LP */}
+      <div className="rounded-3xl border border-brand/30 bg-brand/5 p-6 dark:bg-brand/10 sm:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5 text-brand">
+              <ShieldCheck className="h-6 w-6 shrink-0" />
+              <h2 className="text-lg font-black tracking-tight text-foreground sm:text-xl">
+                Controle de Acessos & Equipe da Empresa
+              </h2>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
+              Cadastre aqui os e-mails da equipe da empresa para repassar o controle total da Landing Page.
+              Todos os administradores listados terão acesso para editar imagens, textos, links, baixar leads e gerenciar pixels.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-brand-foreground shadow-md shadow-brand/25 transition-all hover:bg-brand-dark hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <UserPlus className="h-4 w-4" />
+            Novo Administrador
+          </button>
+        </div>
+      </div>
+
+      {/* Tabela de Administradores */}
+      <div className="rounded-3xl border border-border bg-card overflow-hidden">
+        <div className="p-6 border-b border-border/80 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-black">Administradores Ativos</h3>
+            <p className="text-xs text-muted-foreground">Usuários com permissão para gerenciar a Landing Page</p>
+          </div>
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-brand">
+            {usersQuery.data?.length ?? 0} {usersQuery.data?.length === 1 ? "usuário" : "usuários"}
+          </span>
+        </div>
+
+        {usersQuery.isPending ? (
+          <p className="flex items-center gap-2 p-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando administradores…
+          </p>
+        ) : usersQuery.isError ? (
+          <div className="p-8 text-center text-sm text-destructive">
+            Não foi possível carregar a lista de administradores.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="border-b border-border bg-secondary/30 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-6 py-3.5">E-mail do Administrador</th>
+                  <th className="px-6 py-3.5">Cadastrado em</th>
+                  <th className="px-6 py-3.5">Último Login</th>
+                  <th className="px-6 py-3.5 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersQuery.data.map((user) => (
+                  <tr key={user.id} className="border-b border-border/70 last:border-0 hover:bg-secondary/15 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand font-bold text-xs uppercase">
+                          {user.email.slice(0, 2)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground">{user.email}</p>
+                          {user.isCurrentUser && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                              <UserCheck className="h-3 w-3" /> Sua Sessão Atual
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-muted-foreground">
+                      {new Date(user.createdAt).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="px-6 py-4 text-xs text-muted-foreground">
+                      {user.lastSignInAt
+                        ? new Date(user.lastSignInAt).toLocaleDateString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "Nunca acessou"}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResetTarget({ id: user.id, email: user.email });
+                            setResetPasswordValue("");
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-muted-foreground transition-colors hover:border-brand hover:text-brand"
+                        >
+                          <Key className="h-3.5 w-3.5" />
+                          Alterar Senha
+                        </button>
+
+                        {!user.isCurrentUser && (
+                          <button
+                            type="button"
+                            disabled={deletingId === user.id}
+                            onClick={() => void handleDeleteUser(user.id, user.email)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-muted-foreground transition-colors hover:border-destructive hover:text-destructive disabled:opacity-50"
+                          >
+                            {deletingId === user.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                            Excluir
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal: Cadastrar Novo Administrador */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl sm:p-8">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-brand/10 text-brand">
+                  <UserPlus className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg">Novo Administrador</h3>
+                  <p className="text-xs text-muted-foreground">Liberar acesso ao painel da LP</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="text-xs font-bold text-muted-foreground hover:text-foreground p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  E-mail do Administrador
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="exemplo@empresa.com.br"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Senha de Acesso
+                  </label>
+                  <button
+                    type="button"
+                    onClick={generateRandomPassword}
+                    className="text-[11px] font-bold text-brand hover:underline"
+                  >
+                    Gerar Senha Segura
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    className={`${inputClass} pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Confirmar Senha
+                </label>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita a senha"
+                  className={inputClass}
+                />
+              </div>
+
+              <div className="rounded-2xl border border-border/80 bg-secondary/30 p-3.5 text-xs text-muted-foreground">
+                <p>
+                  💡 <strong>Dica:</strong> Após criar o usuário, você pode enviar o e-mail e senha diretamente para a empresa. Eles poderão acessar o painel pela página <code className="font-mono text-foreground">/auth</code>.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="rounded-full border border-border px-5 py-2.5 text-xs font-bold uppercase tracking-wide hover:bg-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-brand-foreground hover:bg-brand-dark disabled:opacity-60"
+                >
+                  {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Criar Administrador
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Redefinir Senha */}
+      {resetTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl sm:p-8">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="grid h-10 w-10 place-items-center rounded-2xl bg-brand/10 text-brand">
+                  <KeyRound className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg">Alterar Senha</h3>
+                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">{resetTarget.email}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setResetTarget(null)}
+                className="text-xs font-bold text-muted-foreground hover:text-foreground p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleResetPassword} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Nova Senha
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={resetPasswordValue}
+                  onChange={(e) => setResetPasswordValue(e.target.value)}
+                  placeholder="Digite a nova senha (mín. 6 dígitos)"
+                  className={inputClass}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setResetTarget(null)}
+                  className="rounded-full border border-border px-5 py-2.5 text-xs font-bold uppercase tracking-wide hover:bg-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetting}
+                  className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-brand-foreground hover:bg-brand-dark disabled:opacity-60"
+                >
+                  {resetting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Atualizar Senha
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

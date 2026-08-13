@@ -1,5 +1,6 @@
 import { Drumstick, Instagram, Mail, Phone } from "lucide-react";
 import type { SiteContent } from "@/lib/site-content";
+import { trackWhatsAppClick } from "@/lib/tracking";
 
 export function SiteFooter({ content }: { content: SiteContent }) {
   const t = content.texts;
@@ -38,6 +39,7 @@ export function SiteFooter({ content }: { content: SiteContent }) {
                   href={t.footerPhoneLink}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackWhatsAppClick("Rodapé")}
                   className="hover:text-brand"
                 >
                   {t.footerPhone}

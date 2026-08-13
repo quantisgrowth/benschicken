@@ -7,6 +7,7 @@ import darkKitchen from "@/assets/dark-kitchen.jpg";
 import productPackaging from "@/assets/product-packaging.jpg";
 import type { SiteContent } from "@/lib/site-content";
 import { parseVideoSource } from "@/lib/video-helpers";
+import { trackVideoWatch } from "@/lib/tracking";
 
 type Testimonial = {
   id: string;
@@ -219,7 +220,14 @@ export function SocialProof({ content }: { content?: SiteContent }) {
 
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           {testimonials.map((t) => (
-            <TestimonialCard key={t.id} item={t} onClick={() => setActive(t)} />
+            <TestimonialCard
+              key={t.id}
+              item={t}
+              onClick={() => {
+                trackVideoWatch(t.name, t.city);
+                setActive(t);
+              }}
+            />
           ))}
         </div>
 

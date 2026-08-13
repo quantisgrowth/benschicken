@@ -16,6 +16,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { submitLead } from "@/lib/content.functions";
 import type { SiteContent } from "@/lib/site-content";
 import type { Interest } from "./types";
+import {
+  trackFormStart,
+  trackLeadSubmission,
+  trackPresentationDownload,
+} from "@/lib/tracking";
 
 
 const UFS = [
@@ -104,6 +109,7 @@ export function LeadForm({
     if (!presentationUrl || downloadTriggeredRef.current) return;
     downloadTriggeredRef.current = true;
     setDownloadTriggered(true);
+    trackPresentationDownload("automatic");
     const link = document.createElement("a");
     link.href = presentationUrl;
     link.download = "Apresentacao-Comercial-Bens-Chicken.pdf";
@@ -118,6 +124,7 @@ export function LeadForm({
     if (!presentationUrl) return;
     downloadTriggeredRef.current = true;
     setDownloadTriggered(true);
+    trackPresentationDownload("manual");
     const link = document.createElement("a");
     link.href = presentationUrl;
     link.download = "Apresentacao-Comercial-Bens-Chicken.pdf";
@@ -233,6 +240,13 @@ export function LeadForm({
       }
 
       setSent(true);
+      trackLeadSubmission({
+        interest: payload.interest,
+        investment: payload.investment,
+        city: payload.city,
+        uf: payload.uf,
+        experience: payload.experience,
+      });
       toast.success("Recebemos seus dados com sucesso!");
     } catch (err) {
       console.error("Lead submission error:", err);
@@ -353,6 +367,7 @@ export function LeadForm({
                     <input
                       id="nome"
                       value={name}
+                      onFocus={() => trackFormStart()}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Seu nome completo"
                       className={inputClass}

@@ -197,6 +197,43 @@ export const TEXT_FIELDS = [
     default: "5",
     multiline: false,
   },
+  // Rastreamento e Tags de Marketing
+  {
+    key: "metaPixelId",
+    label: "Meta Pixel ID (Facebook / Instagram)",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "googleAnalyticsId",
+    label: "Google Analytics 4 ID (ex.: G-XXXXXXXXXX)",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "googleTagManagerId",
+    label: "Google Tag Manager ID (ex.: GTM-XXXXXXX)",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "googleAdsId",
+    label: "Google Ads ID (ex.: AW-XXXXXXXXXX)",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "googleAdsConversionLabel",
+    label: "Google Ads Conversion Label do Lead (ex.: AbCdEfGhIjKlMnOpQrS)",
+    default: "",
+    multiline: false,
+  },
+  {
+    key: "customHeadScripts",
+    label: "Scripts adicionais no cabeçalho (<head>)",
+    default: "",
+    multiline: true,
+  },
 ] as const;
 
 export type TextKey = (typeof TEXT_FIELDS)[number]["key"];
@@ -315,4 +352,4 @@ export const DEFAULT_CONTENT: SiteContent = { texts: DEFAULT_TEXTS, images: DEFA
 
 export const TEXT_KEYS = TEXT_FIELDS.map((f) => f.key) as TextKey[];
 export const IMAGE_KEYS = IMAGE_FIELDS.map((f) => f.key) as ImageKey[];
-export const MAX_TEXT_LENGTH = 600;
+export const MAX_TEXT_LENGTH = 10000;

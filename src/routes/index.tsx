@@ -16,6 +16,8 @@ import { getSiteContent } from "@/lib/content.functions";
 import { DEFAULT_CONTENT } from "@/lib/site-content";
 
 
+import { TrackingScripts } from "@/components/landing/TrackingScripts";
+
 const title = "Ben's Chicken | Franquia e Licenciamento de Dark Kitchen";
 const description =
   "Fature até R$ 1,2 milhão por ano com as marcas Ben's Chicken e Ben's Burguer. Licencie sua cozinha atual ou abra uma franquia dark kitchen do zero.";
@@ -47,6 +49,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <TrackingScripts texts={content?.texts} />
       <SiteHeader content={content} />
       <main>
         <Hero content={content} />

@@ -1,6 +1,7 @@
 import { Check, ChefHat, Store } from "lucide-react";
 import type { SiteContent } from "@/lib/site-content";
 import type { Interest } from "./types";
+import { trackModelSelect } from "@/lib/tracking";
 
 
 const models = [
@@ -119,7 +120,10 @@ export function ModelCards({
 
                 <a
                   href="#form"
-                  onClick={() => onSelect(m.id)}
+                  onClick={() => {
+                    trackModelSelect(m.id);
+                    onSelect(m.id);
+                  }}
                   className={`mt-8 inline-flex items-center justify-center rounded-2xl px-6 py-3.5 text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 sm:text-base ${
                     isGold
                       ? "border border-brand/50 bg-background text-brand hover:border-brand hover:bg-secondary"

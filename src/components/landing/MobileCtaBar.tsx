@@ -1,5 +1,6 @@
 import { MessageCircle, Send } from "lucide-react";
 import type { SiteContent } from "@/lib/site-content";
+import { trackWhatsAppClick } from "@/lib/tracking";
 
 export function MobileCtaBar({ content }: { content: SiteContent }) {
   const whatsapp = content.texts.footerPhoneLink || "https://wa.me/5511999999999";
@@ -11,6 +12,7 @@ export function MobileCtaBar({ content }: { content: SiteContent }) {
           href={whatsapp}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackWhatsAppClick("Barra Fixa Mobile")}
           className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border-2 border-brand px-4 py-3 text-xs font-black uppercase tracking-wide text-brand transition-colors hover:bg-secondary"
         >
           <MessageCircle className="h-4 w-4 shrink-0" />

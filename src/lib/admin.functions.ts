@@ -51,6 +51,19 @@ const saveSiteContentSchema = z.union([
     accessToken: z.string().optional(),
     data: z.array(entrySchema),
   }),
+  z.object({
+    data: z.union([
+      z.array(entrySchema),
+      z.object({
+        accessToken: z.string().optional(),
+        entries: z.array(entrySchema),
+      }),
+      z.object({
+        accessToken: z.string().optional(),
+        data: z.array(entrySchema),
+      }),
+    ]),
+  }),
 ]);
 
 export const saveSiteContent = createServerFn({ method: "POST" })
@@ -61,24 +74,31 @@ export const saveSiteContent = createServerFn({ method: "POST" })
     let entries: z.infer<typeof entrySchema>[] = [];
     let token: string | undefined;
 
-    if (Array.isArray(data)) {
-      entries = data;
-    } else if ("entries" in data && Array.isArray(data.entries)) {
-      entries = data.entries;
-      token = data.accessToken;
-    } else if ("data" in data && Array.isArray(data.data)) {
-      entries = data.data;
-      token = data.accessToken;
+    let payload = data as any;
+    if (payload && typeof payload === "object" && "data" in payload && !Array.isArray(payload.data)) {
+      payload = payload.data;
+    }
+
+    if (Array.isArray(payload)) {
+      entries = payload;
+    } else if (payload && typeof payload === "object") {
+      if ("entries" in payload && Array.isArray(payload.entries)) {
+        entries = payload.entries;
+        token = payload.accessToken;
+      } else if ("data" in payload && Array.isArray(payload.data)) {
+        entries = payload.data;
+        token = payload.accessToken;
+      }
     }
 
     let userId: string | null = null;
     if (token) {
-      const payload = parseJwtPayload(token);
-      if (payload?.sub) {
-        userId = payload.sub;
+      const jwtPayload = parseJwtPayload(token);
+      if (jwtPayload?.sub) {
+        userId = jwtPayload.sub;
         await supabaseAdmin
           .from("user_roles")
-          .upsert({ user_id: payload.sub, role: "admin" }, { onConflict: "user_id,role" })
+          .upsert({ user_id: jwtPayload.sub, role: "admin" }, { onConflict: "user_id,role" })
           .catch((e) => console.error("Error setting role:", e));
       }
     }
@@ -101,18 +121,28 @@ export const saveSiteContent = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+const resetSiteContentKeySchema = z.union([
+  z.object({ key: z.string().min(1).max(64) }),
+  z.object({ accessToken: z.string().optional(), key: z.string().min(1).max(64) }),
+  z.object({
+    data: z.union([
+      z.object({ key: z.string().min(1).max(64) }),
+      z.object({ accessToken: z.string().optional(), key: z.string().min(1).max(64) }),
+    ]),
+  }),
+]);
+
 export const resetSiteContentKey = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
-    z
-      .union([
-        z.object({ key: z.string().min(1).max(64) }),
-        z.object({ accessToken: z.string().optional(), key: z.string().min(1).max(64) }),
-      ])
-      .parse(input),
-  )
+  .inputValidator((input: unknown) => resetSiteContentKeySchema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("site_content").delete().eq("key", data.key);
+    let payload = data as any;
+    if (payload && typeof payload === "object" && "data" in payload) {
+      payload = payload.data;
+    }
+    const key = payload?.key;
+    if (!key) throw new Error("Chave não informada.");
+    const { error } = await supabaseAdmin.from("site_content").delete().eq("key", key);
     if (error) {
       console.error("Failed to delete site content key via supabaseAdmin:", error);
       throw new Error("Não foi possível restaurar o padrão.");

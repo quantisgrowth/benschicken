@@ -34,11 +34,11 @@ const DEFAULT_SUPABASE_PUBLISHABLE_KEY =
 function createSupabaseClient() {
   let SUPABASE_URL =
     import.meta.env["VITE_SUPABASE_URL"] ||
-    process.env["SUPABASE_URL"] ||
+    (typeof process !== "undefined" && process.env ? process.env["SUPABASE_URL"] : undefined) ||
     DEFAULT_SUPABASE_URL;
   let SUPABASE_PUBLISHABLE_KEY =
     import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
-    process.env["SUPABASE_PUBLISHABLE_KEY"] ||
+    (typeof process !== "undefined" && process.env ? process.env["SUPABASE_PUBLISHABLE_KEY"] : undefined) ||
     DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   if (

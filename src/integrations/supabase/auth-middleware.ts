@@ -38,12 +38,14 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96aHVhcHN6eHh4emhhYnJxY2NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzOTcxMzcsImV4cCI6MjEwMTk3MzEzN30.0GzeLgiJoul1Cjokkc8CI1EXKkq8KlOjjFWaqwUw0MU";
 
     const SUPABASE_URL =
-      process.env["SUPABASE_URL"] ||
-      process.env["VITE_SUPABASE_URL"] ||
+      (typeof process !== "undefined" && process.env ? process.env["SUPABASE_URL"] : undefined) ||
+      (typeof process !== "undefined" && process.env ? process.env["VITE_SUPABASE_URL"] : undefined) ||
+      import.meta.env["VITE_SUPABASE_URL"] ||
       DEFAULT_SUPABASE_URL;
     const SUPABASE_PUBLISHABLE_KEY =
-      process.env["SUPABASE_PUBLISHABLE_KEY"] ||
-      process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+      (typeof process !== "undefined" && process.env ? process.env["SUPABASE_PUBLISHABLE_KEY"] : undefined) ||
+      (typeof process !== "undefined" && process.env ? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] : undefined) ||
+      import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
       DEFAULT_SUPABASE_PUBLISHABLE_KEY;
     
     const request = getRequest();

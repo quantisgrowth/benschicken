@@ -35,11 +35,12 @@ function createSupabaseAdminClient() {
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96aHVhcHN6eHh4emhhYnJxY2NzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjM5NzEzNywiZXhwIjoyMTAxOTczMTM3fQ.NnMV1HjSatllv91qH8i2YOoy5R0uyaytrkZgO8bj20U";
 
   const SUPABASE_URL =
-    process.env["SUPABASE_URL"] ||
-    process.env["VITE_SUPABASE_URL"] ||
+    (typeof process !== "undefined" && process.env ? process.env["SUPABASE_URL"] : undefined) ||
+    (typeof process !== "undefined" && process.env ? process.env["VITE_SUPABASE_URL"] : undefined) ||
+    import.meta.env["VITE_SUPABASE_URL"] ||
     DEFAULT_SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY =
-    process.env["SUPABASE_SERVICE_ROLE_KEY"] ||
+    (typeof process !== "undefined" && process.env ? process.env["SUPABASE_SERVICE_ROLE_KEY"] : undefined) ||
     DEFAULT_SUPABASE_SERVICE_ROLE_KEY;
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

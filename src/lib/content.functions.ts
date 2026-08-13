@@ -20,13 +20,15 @@ const DEFAULT_SUPABASE_PUBLISHABLE_KEY =
 
 function serverPublicClient() {
   const key =
-    process.env["SUPABASE_PUBLISHABLE_KEY"] ||
-    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
-    process.env["SUPABASE_ANON_KEY"] ||
+    (typeof process !== "undefined" && process.env ? process.env["SUPABASE_PUBLISHABLE_KEY"] : undefined) ||
+    (typeof process !== "undefined" && process.env ? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] : undefined) ||
+    (typeof process !== "undefined" && process.env ? process.env["SUPABASE_ANON_KEY"] : undefined) ||
+    import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
     DEFAULT_SUPABASE_PUBLISHABLE_KEY;
   const url =
-    process.env["SUPABASE_URL"] ||
-    process.env["VITE_SUPABASE_URL"] ||
+    (typeof process !== "undefined" && process.env ? process.env["SUPABASE_URL"] : undefined) ||
+    (typeof process !== "undefined" && process.env ? process.env["VITE_SUPABASE_URL"] : undefined) ||
+    import.meta.env["VITE_SUPABASE_URL"] ||
     DEFAULT_SUPABASE_URL;
 
   // Imported lazily so this never enters the client bundle.
@@ -54,7 +56,14 @@ export const getSiteContent = createServerFn({ method: "POST" }).handler(
 
     const supabase = await serverPublicClient();
     const { data, error } = await supabase.from("site_content").select("key, value");
-    if (error || !data) return { texts, images };
+    if (error) {
+      console.error("Failed to fetch site content from Supabase:", error);
+      return { texts, images };
+    }
+    if (!data) {
+      console.warn("No site content data returned from Supabase");
+      return { texts, images };
+    }
 
     const paths: Partial<Record<ImageKey, string>> = {};
     const mediaKeys: TextKey[] = [

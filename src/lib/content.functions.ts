@@ -47,7 +47,7 @@ function serverPublicClient() {
   );
 }
 
-export const getSiteContent = createServerFn({ method: "GET" }).handler(
+export const getSiteContent = createServerFn({ method: "POST" }).handler(
   async (): Promise<SiteContent> => {
     const texts = { ...DEFAULT_TEXTS };
     const images: SiteImages = { ...DEFAULT_IMAGES };

@@ -1123,12 +1123,19 @@ function TextsTab() {
         value: typeof values[field.key] === "string" ? values[field.key] : (field.default ?? ""),
       }));
 
+      let saved = false;
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
-        await save({ data: { accessToken: token, entries: rows } });
+        const res = await save({ data: { accessToken: token, entries: rows } });
+        if (res && "ok" in res && res.ok) {
+          saved = true;
+        }
       } catch (serverErr) {
         console.warn("Server save fallback to client-side supabase:", serverErr);
+      }
+
+      if (!saved) {
         const { data: user } = await supabase.auth.getUser();
         const payload = rows.map((r) => ({
           key: r.key,
@@ -1139,11 +1146,12 @@ function TextsTab() {
         const { error } = await supabase.from("site_content").upsert(payload);
         if (error) throw error;
       }
+
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Textos salvos com sucesso.");
     } catch (err) {
       console.error("Error saving texts:", err);
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar os textos.");
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar alterações.");
     } finally {
       setSaving(false);
     }

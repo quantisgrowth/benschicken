@@ -93,9 +93,7 @@ export const saveSiteContent = createServerFn({ method: "POST" })
         ...(userId ? { updated_by: userId } : {}),
       }));
 
-    if (rows.length === 0) return { ok: true as const };
-
-    const { error } = await supabaseAdmin.from("site_content").upsert(rows);
+    const { error } = await supabaseAdmin.from("site_content").upsert(rows, { onConflict: "key" });
     if (error) {
       console.error("Failed to save site content via supabaseAdmin:", error);
       throw new Error(`Erro ao salvar no banco: ${error.message}`);

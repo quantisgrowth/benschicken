@@ -437,20 +437,25 @@ function MaterialTab() {
   }, [content.data]);
 
   async function persistData(rows: { key: string; value: string }[]) {
+    let saved = false;
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      await save({ data: { accessToken: token, entries: rows } });
+      const res = await save({ data: { accessToken: token, entries: rows } });
+      if (res && "ok" in res && res.ok) saved = true;
     } catch (err) {
       console.warn("Server save fallback to client-side supabase:", err);
+    }
+
+    if (!saved) {
       const { data: user } = await supabase.auth.getUser();
       const payload = rows.map((r) => ({
         key: r.key,
         value: r.value,
         updated_at: new Date().toISOString(),
-        updated_by: user?.user?.id ?? null,
+        ...(user?.user?.id ? { updated_by: user.user.id } : {}),
       }));
-      const { error } = await supabase.from("site_content").upsert(payload);
+      const { error } = await supabase.from("site_content").upsert(payload, { onConflict: "key" });
       if (error) throw error;
     }
   }
@@ -725,20 +730,25 @@ function ImagesTab() {
   const [urlInput, setUrlInput] = useState("");
 
   async function persistData(rows: { key: string; value: string }[]) {
+    let saved = false;
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-      await save({ data: { accessToken: token, entries: rows } });
+      const res = await save({ data: { accessToken: token, entries: rows } });
+      if (res && "ok" in res && res.ok) saved = true;
     } catch (err) {
       console.warn("Server save fallback to client-side supabase:", err);
+    }
+
+    if (!saved) {
       const { data: user } = await supabase.auth.getUser();
       const payload = rows.map((r) => ({
         key: r.key,
         value: r.value,
         updated_at: new Date().toISOString(),
-        updated_by: user?.user?.id ?? null,
+        ...(user?.user?.id ? { updated_by: user.user.id } : {}),
       }));
-      const { error } = await supabase.from("site_content").upsert(payload);
+      const { error } = await supabase.from("site_content").upsert(payload, { onConflict: "key" });
       if (error) throw error;
     }
   }
@@ -1141,9 +1151,9 @@ function TextsTab() {
           key: r.key,
           value: r.value,
           updated_at: new Date().toISOString(),
-          updated_by: user?.user?.id ?? null,
+          ...(user?.user?.id ? { updated_by: user.user.id } : {}),
         }));
-        const { error } = await supabase.from("site_content").upsert(payload);
+        const { error } = await supabase.from("site_content").upsert(payload, { onConflict: "key" });
         if (error) throw error;
       }
 
@@ -1151,7 +1161,13 @@ function TextsTab() {
       toast.success("Textos salvos com sucesso.");
     } catch (err) {
       console.error("Error saving texts:", err);
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar alterações.");
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as any).message)
+            : "Erro ao salvar alterações.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -1364,27 +1380,38 @@ function TrackingTab() {
         { key: "customHeadScripts", value: customHeadScripts.trim() },
       ];
 
+      let saved = false;
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
-        await save({ data: { accessToken: token, entries: rows } });
+        const res = await save({ data: { accessToken: token, entries: rows } });
+        if (res && "ok" in res && res.ok) saved = true;
       } catch (serverErr) {
         console.warn("Server save fallback to client supabase:", serverErr);
+      }
+
+      if (!saved) {
         const { data: user } = await supabase.auth.getUser();
         const payload = rows.map((r) => ({
           key: r.key,
           value: r.value,
           updated_at: new Date().toISOString(),
-          updated_by: user?.user?.id ?? null,
+          ...(user?.user?.id ? { updated_by: user.user.id } : {}),
         }));
-        const { error } = await supabase.from("site_content").upsert(payload);
+        const { error } = await supabase.from("site_content").upsert(payload, { onConflict: "key" });
         if (error) throw error;
       }
 
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Configurações de rastreamento salvas com sucesso!");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar tags de rastreamento.");
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as any).message)
+            : "Falha ao salvar tags de rastreamento.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

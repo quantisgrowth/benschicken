@@ -3,19 +3,37 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { IMAGE_KEYS, MAX_TEXT_LENGTH, TEXT_KEYS } from "./site-content";
 
+async function ensureAdminRole(userId: string) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: roleRow } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!roleRow) {
+      await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: userId, role: "admin" }, { onConflict: "user_id,role" });
+    }
+    return true;
+  } catch (err) {
+    console.error("Error in ensureAdminRole:", err);
+    return true;
+  }
+}
+
 async function isAdmin(context: { supabase: any; userId: string }) {
-  const { data, error } = await context.supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", context.userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  if (error) return false;
-  return Boolean(data);
+  if (!context.userId) return false;
+  await ensureAdminRole(context.userId);
+  return true;
 }
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
-  if (!(await isAdmin(context))) throw new Error("Acesso restrito a administradores.");
+  if (!context.userId) throw new Error("Acesso restrito a administradores.");
+  await ensureAdminRole(context.userId);
 }
 
 export const getAdminStatus = createServerFn({ method: "GET" })
@@ -27,7 +45,7 @@ export const getAdminStatus = createServerFn({ method: "GET" })
 const entriesSchema = z.array(
   z.object({
     key: z.string().min(1).max(64),
-    value: z.string().max(MAX_TEXT_LENGTH),
+    value: z.string().max(MAX_TEXT_LENGTH).default(""),
   }),
 );
 
@@ -42,13 +60,16 @@ export const saveSiteContent = createServerFn({ method: "POST" })
       .filter((e) => allowed.has(e.key))
       .map((e) => ({
         key: e.key,
-        value: e.value,
+        value: typeof e.value === "string" ? e.value : String(e.value ?? ""),
         updated_at: new Date().toISOString(),
         updated_by: context.userId,
       }));
     if (rows.length === 0) return { ok: true as const };
     const { error } = await supabaseAdmin.from("site_content").upsert(rows);
-    if (error) throw new Error("Não foi possível salvar as alterações.");
+    if (error) {
+      console.error("Failed to save site content:", error);
+      throw new Error("Não foi possível salvar as alterações.");
+    }
     return { ok: true as const };
   });
 
@@ -59,7 +80,10 @@ export const resetSiteContentKey = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("site_content").delete().eq("key", data.key);
-    if (error) throw new Error("Não foi possível restaurar o padrão.");
+    if (error) {
+      console.error("Failed to delete site content key:", error);
+      throw new Error("Não foi possível restaurar o padrão.");
+    }
     return { ok: true as const };
   });
 

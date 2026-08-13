@@ -1066,6 +1066,20 @@ function ImagesTab() {
   );
 }
 
+const EXCLUDED_FROM_TEXTS = new Set([
+  "presentationFile",
+  "presentationAutoDownloadSeconds",
+  "metaPixelId",
+  "googleAnalyticsId",
+  "googleTagManagerId",
+  "googleAdsId",
+  "googleAdsConversionLabel",
+  "customHeadScripts",
+  "testimonial1Video",
+  "testimonial2Video",
+  "testimonial3Video",
+]);
+
 function TextsTab() {
   const content = useContent();
   const queryClient = useQueryClient();
@@ -1074,7 +1088,15 @@ function TextsTab() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (content.data && !values) setValues({ ...content.data.texts });
+    if (content.data?.texts && !values) {
+      const initial: Record<string, string> = {};
+      TEXT_FIELDS.forEach((field) => {
+        if (!EXCLUDED_FROM_TEXTS.has(field.key)) {
+          initial[field.key] = content.data.texts[field.key] ?? field.default ?? "";
+        }
+      });
+      setValues(initial);
+    }
   }, [content.data, values]);
 
   if (!values) {
@@ -1089,7 +1111,12 @@ function TextsTab() {
     if (!values) return;
     setSaving(true);
     try {
-      const rows = Object.entries(values).map(([key, value]) => ({ key, value }));
+      const textFieldsToSave = TEXT_FIELDS.filter((field) => !EXCLUDED_FROM_TEXTS.has(field.key));
+      const rows = textFieldsToSave.map((field) => ({
+        key: field.key,
+        value: typeof values[field.key] === "string" ? values[field.key] : (field.default ?? ""),
+      }));
+
       try {
         await save({ data: rows });
       } catch (serverErr) {
@@ -1107,7 +1134,8 @@ function TextsTab() {
       await queryClient.invalidateQueries({ queryKey: ["site-content"] });
       toast.success("Textos salvos com sucesso.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao salvar.");
+      console.error("Error saving texts:", err);
+      toast.error(err instanceof Error ? err.message : "Falha ao salvar os textos.");
     } finally {
       setSaving(false);
     }
@@ -1115,17 +1143,6 @@ function TextsTab() {
 
   const inputClass =
     "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/25";
-
-  const EXCLUDED_FROM_TEXTS = new Set([
-    "presentationFile",
-    "presentationAutoDownloadSeconds",
-    "metaPixelId",
-    "googleAnalyticsId",
-    "googleTagManagerId",
-    "googleAdsId",
-    "googleAdsConversionLabel",
-    "customHeadScripts",
-  ]);
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6">
@@ -1139,7 +1156,7 @@ function TextsTab() {
               <textarea
                 id={field.key}
                 rows={3}
-                maxLength={600}
+                maxLength={4000}
                 value={values[field.key] ?? ""}
                 onChange={(e) => setValues({ ...values, [field.key]: e.target.value })}
                 className={inputClass}
@@ -1147,7 +1164,7 @@ function TextsTab() {
             ) : (
               <input
                 id={field.key}
-                maxLength={600}
+                maxLength={4000}
                 value={values[field.key] ?? ""}
                 onChange={(e) => setValues({ ...values, [field.key]: e.target.value })}
                 className={inputClass}

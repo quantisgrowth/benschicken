@@ -438,7 +438,9 @@ function MaterialTab() {
 
   async function persistData(rows: { key: string; value: string }[]) {
     try {
-      await save({ data: rows });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      await save({ data: { accessToken: token, entries: rows } });
     } catch (err) {
       console.warn("Server save fallback to client-side supabase:", err);
       const { data: user } = await supabase.auth.getUser();
@@ -724,7 +726,9 @@ function ImagesTab() {
 
   async function persistData(rows: { key: string; value: string }[]) {
     try {
-      await save({ data: rows });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      await save({ data: { accessToken: token, entries: rows } });
     } catch (err) {
       console.warn("Server save fallback to client-side supabase:", err);
       const { data: user } = await supabase.auth.getUser();
@@ -741,7 +745,9 @@ function ImagesTab() {
 
   async function removeKey(key: string) {
     try {
-      await reset({ data: { key } });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      await reset({ data: { accessToken: token, key } });
     } catch (err) {
       console.warn("Server reset fallback to client-side supabase:", err);
       const { error } = await supabase.from("site_content").delete().eq("key", key);
@@ -1118,7 +1124,9 @@ function TextsTab() {
       }));
 
       try {
-        await save({ data: rows });
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        await save({ data: { accessToken: token, entries: rows } });
       } catch (serverErr) {
         console.warn("Server save fallback to client-side supabase:", serverErr);
         const { data: user } = await supabase.auth.getUser();
@@ -1349,7 +1357,9 @@ function TrackingTab() {
       ];
 
       try {
-        await save({ data: rows });
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        await save({ data: { accessToken: token, entries: rows } });
       } catch (serverErr) {
         console.warn("Server save fallback to client supabase:", serverErr);
         const { data: user } = await supabase.auth.getUser();
